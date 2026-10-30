@@ -2,113 +2,35 @@
  * Usage: npm run scrape            (reads scripts/sets.txt, caches pages in scripts/cache)
  *        npm run scrape -- --refresh   (ignore cache)
  *        Entries in sets.txt may be a URL or a path to a saved HTML file ("setNo=path.html").
+ * The logic lives in scrape-lib.ts (tested); this file only does the real I/O.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { parseChangelog, parseInventory } from './parse';
+import { argv } from 'node:process';
 import { versionOverrides, extraVersions, mergeDates } from '../src/data/versions';
-import { defaultDefs, effectiveChanges, mergeChanges } from '../src/logic/versions';
-import { must, type SetInventory } from '../src/data/types';
+import { parseSetsFile, renderGenerated, scrape, type Io } from './scrape-lib';
 
-const refresh = process.argv.includes('--refresh');
 const cacheDir = 'scripts/cache';
 mkdirSync(cacheDir, { recursive: true });
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const lines = readFileSync('scripts/sets.txt', 'utf8')
-  .split('\n')
-  .map((l) => l.trim())
-  .filter((l) => l && !l.startsWith('#'));
-const sets: SetInventory[] = [];
-
-async function loadChangelog(setNo: string, local: boolean) {
-  const cache = `${cacheDir}/${setNo}.changelog.html`;
-  let html: string;
-  if (!refresh && existsSync(cache)) html = readFileSync(cache, 'latin1');
-  else if (local) return [];
-  else {
-    const url = `https://www.bricklink.com/catalogInvChangeItem.asp?itemType=S&itemNo=${setNo}&viewDate=Y&viewStatus=1`;
+const io: Io = {
+  readCache: (name) => (existsSync(`${cacheDir}/${name}`) ? readFileSync(`${cacheDir}/${name}`, 'latin1') : undefined),
+  writeCache: (name, html) => writeFileSync(`${cacheDir}/${name}`, html, 'latin1'),
+  readFile: (path) => readFileSync(path, 'latin1'),
+  fetchHtml: async (url) => {
     const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-    if (!res.ok) {
-      console.warn(`  WARN ${setNo}: change log HTTP ${res.status}`);
-      return [];
-    }
-    html = Buffer.from(await res.arrayBuffer()).toString('latin1');
-    writeFileSync(cache, html, 'latin1');
-    await sleep(1500);
-  }
-  return parseChangelog(html);
-}
+    return { ok: res.ok, status: res.status, html: Buffer.from(await res.arrayBuffer()).toString('latin1') };
+  },
+  sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
+};
 
-for (const line of lines) {
-  if (line.startsWith('!')) {
-    const [setNo, ...rest] = line.slice(1).split(/\s+/);
-    sets.push({
-      setNo,
-      name: rest.join(' '),
-      sourceUrl: `https://www.bricklink.com/v2/catalog/catalogitem.page?S=${setNo}`,
-      items: [],
-      changes: [],
-      noInventory: true,
-    });
-    console.log(`${setNo}: no inventory (listed only)`);
-    continue;
-  }
-  let setNo: string,
-    html: string,
-    src: string,
-    local = false;
-  if (line.includes('=') && !line.startsWith('http')) {
-    const [n, path] = line.split('=');
-    setNo = n;
-    src = path;
-    local = true;
-    html = readFileSync(path, 'latin1');
-  } else {
-    setNo = must(new URL(line).searchParams.get('S'), `S parameter in ${line}`);
-    src = line;
-    const cache = `${cacheDir}/${setNo}.html`;
-    if (!refresh && existsSync(cache)) html = readFileSync(cache, 'latin1');
-    else {
-      console.log(`fetching ${setNo}`);
-      const res = await fetch(line, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-      if (!res.ok) throw new Error(`${setNo}: HTTP ${res.status}`);
-      html = Buffer.from(await res.arrayBuffer()).toString('latin1');
-      if (!html.includes('IV_ITEM'))
-        throw new Error(
-          `${setNo}: no inventory in response (blocked?). Save the page manually and use "setNo=file.html".`,
-        );
-      writeFileSync(cache, html, 'latin1');
-      await sleep(1500);
-    }
-  }
-  const inv = parseInventory(
-    html,
-    setNo,
-    src.startsWith('http') ? src : `https://www.bricklink.com/catalogItemInv.asp?S=${setNo}`,
-  );
-  inv.changes = await loadChangelog(setNo, local);
-  const alts = new Set(inv.items.filter((i) => i.kind === 'alternate').map((i) => i.matchId));
-  const defs = defaultDefs(inv, versionOverrides, extraVersions, mergeDates);
-  if (!versionOverrides[setNo]) {
-    const ch = mergeChanges(effectiveChanges(inv), mergeDates[setNo] ?? []);
-    for (let k = 1; k < ch.length; k++) {
-      const gap =
-        (Date.parse(ch[k].date.split(' + ').at(-1) ?? ch[k].date) - Date.parse(ch[k - 1].date.split(' + ')[0])) /
-        86400000;
-      if (gap <= 183)
-        console.warn(
-          `  WARN ${setNo}: "${ch[k - 1].date}" and "${ch[k].date}" are ${Math.round(gap)} days apart - same production run? Merge via mergeDates in src/data/versions.ts`,
-        );
-    }
-  }
-  const used = new Set(defs.flatMap((v) => v.alternates));
-  console.log(
-    `${setNo}: ${inv.items.length} items, ${inv.changes.length} dated change groups, versions: ${defs.map((d) => d.name).join(' | ')}`,
-  );
-  for (const m of alts) if (!used.has(m)) console.warn(`  WARN ${setNo}: match ID ${m} not in any version`);
-  sets.push(inv);
-}
+const sets = await scrape({
+  entries: parseSetsFile(readFileSync('scripts/sets.txt', 'utf8')),
+  refresh: argv.includes('--refresh'),
+  io,
+  data: { overrides: versionOverrides, extra: extraVersions, merge: mergeDates },
+  log: console.log,
+  warn: console.warn,
+});
 
-const out = `// GENERATED by scripts/scrape-bricklink.ts - do not edit\nimport type { SetInventory } from './types';\nexport const sets: SetInventory[] = ${JSON.stringify(sets, null, 1)};\n`;
-writeFileSync('src/data/sets.generated.ts', out);
+writeFileSync('src/data/sets.generated.ts', renderGenerated(sets));
 console.log(`wrote src/data/sets.generated.ts (${sets.length} sets)`);

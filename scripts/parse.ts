@@ -87,20 +87,16 @@ export interface ChangeGroup {
 
 /** Parse the BrickLink inventory change log: alternate Match IDs introduced per date (ascending). */
 export function parseChangelog(html: string): ChangeGroup[] {
-  const chunks = html.split(/<B>&nbsp;(?=[A-Z][a-z]{2} \d{1,2}, \d{4}<\/B>)/).slice(1);
-  const groups = chunks
-    .flatMap((c) => {
-      const date = /^([A-Z][a-z]{2} \d{1,2}, \d{4})/.exec(c)?.[1];
-      if (!date) return [];
-      const ids = new Set<number>();
-      for (const m of c.matchAll(
-        /\((?:Match ID (\d+))\)|\{Match ID \d+ to (\d+)\s*\}|\{match ID \d+ to (\d+)\s*\}/gi,
-      )) {
-        const n = Number(m[1] ?? m[2] ?? m[3]);
-        if (n > 0) ids.add(n);
-      }
-      return [{ date, matchIds: [...ids].sort((a, b) => a - b) }];
-    })
-    .filter((g) => g.matchIds.length);
+  // Splitting on a capture group yields [text before, date1, text after date1, date2, ...].
+  const parts = html.split(/<B>&nbsp;([A-Z][a-z]{2} \d{1,2}, \d{4})<\/B>/).slice(1);
+  const groups: ChangeGroup[] = [];
+  for (let i = 0; i < parts.length; i += 2) {
+    const ids = new Set<number>();
+    for (const m of parts[i + 1].matchAll(/\(Match ID (\d+)\)|\{Match ID \d+ to (\d+)\s*\}/gi)) {
+      const n = Number(m[1] ?? m[2]);
+      if (n > 0) ids.add(n);
+    }
+    if (ids.size) groups.push({ date: parts[i], matchIds: [...ids].sort((a, b) => a - b) });
+  }
   return groups.sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
 }
