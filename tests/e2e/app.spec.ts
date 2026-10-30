@@ -200,7 +200,9 @@ test.describe('sorting', () => {
     await page.locator('[data-tab="separate"]').first().click();
     await expect(page.getByText('All boxes are the same version')).toBeVisible();
   });
+});
 
+test.describe('sorting: mixed pile', () => {
   test('"Skip sorting" moves a version into a mixed pile and "Sort out" brings it back', async ({ page }) => {
     await withWorkshop(page);
     await page.locator('[data-tab="separate"]').first().click();
@@ -269,7 +271,9 @@ test.describe('sorting', () => {
     await expect(page.getByRole('heading', { name: 'Kept mixed (3 boxes)' })).toBeVisible();
     await expect(page.locator('.ui-list-row', { hasText: '3 ×' })).toBeVisible();
   });
+});
 
+test.describe('sorting: progress', () => {
   test('the progress counter follows the ticks', async ({ page }) => {
     await withWorkshop(page);
     await page.locator('[data-tab="separate"]').first().click();
