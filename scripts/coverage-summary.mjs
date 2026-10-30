@@ -1,5 +1,6 @@
 // Prints the vitest json-summary coverage report as a markdown table (for the GitHub step summary).
 import { readFileSync } from 'node:fs';
+import { cwd, stdout } from 'node:process';
 
 const summary = JSON.parse(readFileSync('coverage/coverage-summary.json', 'utf8'));
 const cell = (m) => `${m.pct}% (${m.covered}/${m.total})`;
@@ -13,6 +14,6 @@ const lines = [
   '| File | Branches | Functions | Lines | Statements |',
   '| --- | --- | --- | --- | --- |',
   row('**Total**', summary.total),
-  ...files.map(([f, s]) => row(f.replace(`${process.cwd()}/`, ''), s)),
+  ...files.map(([f, s]) => row(f.replace(`${cwd()}/`, ''), s)),
 ];
-console.log(lines.join('\n'));
+stdout.write(lines.join('\n') + '\n');
