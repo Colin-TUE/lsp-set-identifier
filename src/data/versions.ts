@@ -40,7 +40,8 @@ export const extraVersions: Record<string, VersionDef[]> = {
   '2000430-2': [
     {
       id: '2026',
-      name: '2026 update (from open change request, pending BrickLink approval)',
+      name: '2026 update',
+      note: 'From open change request, pending BrickLink approval.',
       alternates: [1, 2, 3],
       pending: true,
       swaps: [
@@ -98,7 +99,8 @@ export const extraVersions: Record<string, VersionDef[]> = {
   '2000431-1': [
     {
       id: '2026',
-      name: '2026 update (from open change request, pending BrickLink approval)',
+      name: '2026 update',
+      note: 'From open change request, pending BrickLink approval.',
       alternates: [],
       pending: true,
       swaps: [
