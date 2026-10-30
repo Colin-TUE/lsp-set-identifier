@@ -1,7 +1,7 @@
 import './style.css';
 import { sets } from './data/sets.generated';
 import { versionOverrides, extraVersions, mergeDates } from './data/versions';
-import { imgUrl, type Item, type ResolvedVersion } from './data/types';
+import { imgUrl, itemKey, type Item, type ResolvedVersion } from './data/types';
 import { resolveAll } from './logic/versions';
 import { changeFrom, compare, distinguish, identify, itemIndex, nextQuestion, questionId, separate, type PartRow, type Question } from './logic/analysis';
 
@@ -37,7 +37,10 @@ function partHtml(i: Item, extra = ''): string {
 function candidates(): ResolvedVersion[] {
   let c = versions.filter((v) => !state.setFilter || v.setNo === state.setFilter);
   for (const a of state.answers) c = c.filter((v) => a.keep.includes(v.key));
-  return c;
+  // Parts the user has entered rule out versions that do not contain them (unless that would rule out everything).
+  const has = (v: ResolvedVersion, k: string) => v.parts.some((p) => itemKey(p) === k);
+  const fit = c.filter((v) => state.obs.every((o) => has(v, o.key)));
+  return fit.length ? fit : c;
 }
 
 let currentQ: Question | null = null;
@@ -105,6 +108,8 @@ function renderIdentify(): string {
     if (cands.length > 1) h += `<div class="card muted">No more questions available.</div>`;
   }
 
+  const noFit = state.obs.length > 0 && !cands.every((v) => state.obs.every((o) => v.parts.some((p) => itemKey(p) === o.key)));
+  if (noFit) h += `<div class="card muted">No version contains all the parts you entered, so the closest matches are shown.</div>`;
   h += `<h2>Result (${cands.length} candidate${cands.length === 1 ? '' : 's'})</h2>`;
   h += identify(cands, state.obs).map((r) => candidateHtml(r, cands)).join('');
   return h;
