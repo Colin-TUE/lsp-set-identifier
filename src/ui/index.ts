@@ -35,7 +35,6 @@ export const link = (href: string, c: Html, o: { external?: boolean } = {}): Htm
 
 // ---- Layout ----
 export const row = (c: Html, o: { noPrint?: boolean } = {}): Html => `<div class="${cls('ui-row', o.noPrint && 'ui-noprint')}">${c}</div>`;
-export const page = (c: Html): Html => `<div class="ui-page">${c}</div>`;
 
 // ---- Buttons ----
 export interface ButtonOpts { variant?: 'default' | 'active' | 'choice'; noPrint?: boolean; attrs?: Attrs }
@@ -43,7 +42,15 @@ export const button = (c: Html, o: ButtonOpts = {}): Html =>
   `<button${attrs({ class: cls('ui-button', o.variant === 'active' && 'ui-button--active', o.variant === 'choice' && 'ui-button--choice', o.noPrint && 'ui-noprint'), ...o.attrs })}>${c}</button>`;
 
 export const tabs = <T extends string>(items: Record<T, string>, active: T): Html =>
-  `<nav class="ui-tabs ui-noprint">${(Object.keys(items) as T[]).map((t) => button(esc(items[t]), { variant: t === active ? 'active' : 'default', attrs: { 'data-tab': t } })).join('')}</nav>`;
+  `<nav class="ui-tabs ui-noprint" role="tablist">${(Object.keys(items) as T[]).map((t) =>
+    `<button${attrs({ class: cls('ui-tab', t === active && 'ui-tab--active'), role: 'tab', 'aria-selected': t === active, 'data-tab': t })}>${esc(items[t])}</button>`).join('')}</nav>`;
+
+// ---- App shell ----
+export const header = (title: string, nav: Html): Html =>
+  `<header class="ui-header"><div class="ui-page"><div class="ui-header__title">${heading(1, esc(title))}</div>${nav}</div></header>`;
+export const footer = (c: Html): Html => `<footer class="ui-footer"><div class="ui-page">${c}</div></footer>`;
+export const shell = (parts: { header: Html; main: Html; footer: Html }): Html =>
+  `<div class="ui-shell">${parts.header}<main class="ui-shell__main ui-page">${parts.main}</main>${parts.footer}</div>`;
 
 // ---- Card / disclosure ----
 export interface CardOpts { highlight?: boolean; row?: boolean; muted?: boolean; list?: boolean }

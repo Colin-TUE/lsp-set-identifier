@@ -1,4 +1,4 @@
-import { button, card, checkbox, collapsible, divider, esc, field, heading, link, listRow, listRowMeta, muted, mutedInline, notice, numberInput, page, paragraph, partRow, pending, qty, row, select, tabs, textInput } from './ui';
+import { button, card, checkbox, collapsible, divider, esc, field, footer, header, heading, link, listRow, listRowMeta, muted, mutedInline, notice, numberInput, paragraph, partRow, pending, qty, row, select, shell, tabs, textInput } from './ui';
 import { sets } from './data/sets.generated';
 import { versionOverrides, extraVersions, mergeDates } from './data/versions';
 import { imgUrl, itemKey, type Item, type ResolvedVersion } from './data/types';
@@ -164,9 +164,12 @@ const TABS = { identify: 'Identify', common: 'Common parts', separate: 'Separate
 function render() {
   const body = state.tab === 'identify' ? renderIdentify() : state.tab === 'common' ? renderCommon() : renderSeparate();
   const noInv = sets.filter((s) => s.noInventory);
-  document.getElementById('app')!.innerHTML = page(heading(1, 'LEGO Serious Play set identifier') + tabs(TABS, state.tab) + body +
-    (noInv.length ? paragraph(`Known sets without a BrickLink inventory (cannot be identified): ${noInv.map((s) => link(s.sourceUrl, esc(s.setNo + ' ' + s.name))).join('; ')}`, { muted: true }) : '') +
-    paragraph('Data from BrickLink inventories. Images hotlinked from BrickLink.', { muted: true }));
+  document.getElementById('app')!.innerHTML = shell({
+    header: header('LEGO Serious Play set identifier', tabs(TABS, state.tab)),
+    main: body,
+    footer: footer((noInv.length ? paragraph(`Known sets without a BrickLink inventory (cannot be identified): ${noInv.map((s) => link(s.sourceUrl, esc(s.setNo + ' ' + s.name))).join('; ')}`, { muted: true }) : '') +
+      paragraph('Data from BrickLink inventories. Images hotlinked from BrickLink.', { muted: true })),
+  });
 }
 
 document.addEventListener('click', (e) => {

@@ -12,6 +12,7 @@
   --ui-color-border-choice: #ccc;
   --ui-color-border-subtle: #eee;
   --ui-color-border-hover: #222;
+  --ui-color-accent: #222;
   /* Colors: status */
   --ui-color-warning: #b60;
   --ui-color-success: #2a7;
@@ -45,6 +46,7 @@
 
   /* Layout & sizes */
   --ui-page-max-width: 960px;
+  --ui-tab-indicator-width: 3px;
   --ui-choice-min-width: 220px;
   --ui-thumb-width: 56px;
   --ui-thumb-height: 42px;

@@ -2,7 +2,21 @@
 :root { font-family: var(--ui-font-family); color: var(--ui-color-text); }
 body { margin: 0; background: var(--ui-color-bg-page); }
 
-.ui-page { max-width: var(--ui-page-max-width); margin: 0 auto; padding: var(--ui-space-8); }
+/* App shell: header, main content, footer pinned to the bottom */
+.ui-shell { min-height: 100vh; display: flex; flex-direction: column; }
+.ui-shell__main { flex: 1; }
+.ui-page { max-width: var(--ui-page-max-width); margin: 0 auto; padding: 0 var(--ui-space-8); box-sizing: border-box; width: 100%; }
+.ui-shell__main.ui-page { padding-bottom: var(--ui-space-8); }
+
+/* Header */
+.ui-header { background: var(--ui-color-bg-surface); border-bottom: var(--ui-border-width) solid var(--ui-color-border); }
+.ui-header__title { padding-top: var(--ui-space-6); }
+.ui-header__title .ui-heading { margin: 0 0 var(--ui-space-4); }
+
+/* Footer */
+.ui-footer { border-top: var(--ui-border-width) solid var(--ui-color-border); background: var(--ui-color-bg-surface);
+  padding: var(--ui-space-6) 0; margin-top: var(--ui-space-9); }
+.ui-footer .ui-paragraph { margin: var(--ui-space-2) 0; }
 
 /* Headings */
 .ui-heading { margin: 0; }
@@ -19,7 +33,11 @@ body { margin: 0; background: var(--ui-color-bg-page); }
 
 /* Layout */
 .ui-row { display: flex; gap: var(--ui-space-5); align-items: center; flex-wrap: wrap; }
-.ui-tabs { display: flex; gap: var(--ui-space-4); margin-bottom: var(--ui-space-8); flex-wrap: wrap; }
+.ui-tabs { display: flex; gap: var(--ui-space-2); flex-wrap: wrap; }
+.ui-tab { padding: var(--ui-space-4) var(--ui-space-7); border: 0; border-bottom: var(--ui-tab-indicator-width) solid transparent;
+  background: none; color: var(--ui-color-text-muted); font: inherit; cursor: pointer; }
+.ui-tab:hover { color: var(--ui-color-text); }
+.ui-tab--active { color: var(--ui-color-text); font-weight: var(--ui-font-weight-semibold); border-bottom-color: var(--ui-color-accent); }
 
 /* Buttons */
 .ui-button { padding: var(--ui-space-4) var(--ui-space-7); border: var(--ui-border-width) solid var(--ui-color-border-strong);
@@ -53,6 +71,7 @@ body { margin: 0; background: var(--ui-color-bg-page); }
 .ui-qty { font-variant-numeric: tabular-nums; font-weight: var(--ui-font-weight-semibold); min-width: var(--ui-qty-min-width); }
 
 @media print {
-  .ui-noprint, .ui-button { display: none !important; }
+  .ui-noprint, .ui-button, .ui-tabs { display: none !important; }
+  .ui-header, .ui-footer { background: none; }
   body { background: var(--ui-color-bg-surface); }
 }
