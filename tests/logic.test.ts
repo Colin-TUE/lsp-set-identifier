@@ -31,3 +31,24 @@ test('2000430-2 versions differ', () => {
   const p = separate(vs.slice(0, 2));
   expect(Object.keys(p.piles).length).toBe(2);
 });
+
+test('pending 2026 version of 2000430-2 is built from the change request', () => {
+  const v23 = get('2000430-2/Jul 1, 2023 + Jul 2, 2023'), v26 = get('2000430-2/2026');
+  expect(v26.pending).toBe(true);
+  expect(v26.parts.reduce((a, p) => a + p.qty, 0)).toBe(v23.parts.reduce((a, p) => a + p.qty, 0));
+  expect(v26.parts.some((p) => p.partId === '3003' && p.colorId === 156 && p.qty === 20)).toBe(true);
+  expect(v26.parts.some((p) => p.partId === '3003' && p.colorId === 42)).toBe(false);
+  expect(v26.extras.some((e) => e.partId === '39262' && e.qty === 4)).toBe(true);
+});
+
+test('pending 2026 version of 2000431-1 applies swaps, removals, quantity changes and additions', () => {
+  const o = get('2000431-1/orig'), v = get('2000431-1/2026');
+  expect(v.pending).toBe(true);
+  expect(v.parts.some((p) => p.partId === '3666')).toBe(false);
+  expect(v.parts.find((p) => p.partId === '2780')!.qty).toBe(100);
+  expect(v.parts.find((p) => p.partId === '3706')!.qty).toBe(10);
+  expect(v.parts.find((p) => p.partId === '32034' && p.colorId === 86)!.qty).toBe(100);
+  expect(v.parts.some((p) => p.partId === '49743c01')).toBe(true);
+  expect(v.parts.some((p) => p.partId === '57029c01')).toBe(false);
+  expect(o.parts.some((p) => p.partId === '3666')).toBe(true);
+});

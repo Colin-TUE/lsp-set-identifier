@@ -59,12 +59,27 @@ export function resolveVersion(set: SetInventory, def: VersionDef): ResolvedVers
   const active = new Set(def.alternates);
   const swapped = set.items.filter((i) => i.kind === 'alternate' && active.has(i.matchId));
   const swappedIds = new Set(swapped.map((i) => i.matchId));
-  const parts: Item[] = set.items
+  let parts: Item[] = set.items
     .filter((i) => i.kind === 'regular' && !(i.matchId > 0 && swappedIds.has(i.matchId)))
     .concat(swapped.map((i) => ({ ...i, kind: 'regular' as const })));
+  for (const sw of def.swaps ?? []) {
+    const hit = parts.find((p) => p.partId === sw.from.partId && p.colorId === sw.from.colorId);
+    if (!hit) throw new Error(`${set.setNo}/${def.id}: swap source ${sw.from.partId}:${sw.from.colorId} not found`);
+    parts = parts.map((p) => (p === hit ? { ...p, type: sw.to.type ?? p.type, partId: sw.to.partId, colorId: sw.to.colorId, colorName: sw.to.colorName, name: sw.to.name ?? p.name } : p));
+  }
+  const find = (partId: string, colorId: number) => {
+    const hit = parts.find((p) => p.partId === partId && p.colorId === colorId);
+    if (!hit) throw new Error(`${set.setNo}/${def.id}: part ${partId}:${colorId} not found`);
+    return hit;
+  };
+  for (const r of def.removes ?? []) { const hit = find(r.partId, r.colorId); parts = parts.filter((p) => p !== hit); }
+  for (const q of def.setQty ?? []) { const hit = find(q.partId, q.colorId); parts = parts.map((p) => (p === hit ? { ...p, qty: q.qty } : p)); }
+  parts = parts.concat((def.addParts ?? []).map((a) => ({ ...a, kind: 'regular' as const, matchId: 0 })));
+  const extras: Item[] = set.items.filter((i) => i.kind === 'extra')
+    .concat((def.addExtras ?? []).map((e) => ({ ...e, type: 'P', kind: 'extra' as const, matchId: 0 })));
   return {
     key: `${set.setNo}/${def.id}`, setNo: set.setNo, setName: set.name, id: def.id, name: def.name,
-    pending: !!def.pending, parts, extras: set.items.filter((i) => i.kind === 'extra'),
+    pending: !!def.pending, parts, extras,
   };
 }
 
