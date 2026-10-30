@@ -1,0 +1,20 @@
+:root { font-family: system-ui, sans-serif; color: #222; }
+body { margin: 0; background: #f5f5f7; }
+#app { max-width: 960px; margin: 0 auto; padding: 1rem; }
+h1 { font-size: 1.3rem; } h2 { font-size: 1.1rem; margin-top: 1.5rem; }
+nav { display: flex; gap: .5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+nav button, button { padding: .5rem .9rem; border: 1px solid #bbb; background: #fff; border-radius: 6px; cursor: pointer; }
+nav button.active { background: #222; color: #fff; }
+.card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: .8rem; margin: .5rem 0; }
+.row { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+.part { display: flex; gap: .6rem; align-items: center; padding: .3rem 0; border-bottom: 1px solid #eee; }
+.part img { width: 56px; height: 42px; object-fit: contain; }
+.part .meta { flex: 1; font-size: .85rem; } .part .qty { font-variant-numeric: tabular-nums; font-weight: 600; }
+.choice { flex: 1; min-width: 220px; border: 2px solid #ccc; border-radius: 8px; padding: .6rem; cursor: pointer; background: #fff; text-align: left; }
+.choice:hover { border-color: #222; }
+.pending { color: #b60; font-size: .8rem; } .muted { color: #777; font-size: .85rem; }
+.score { font-weight: 700; } .best { border-color: #2a7; }
+input[type=text], input[type=number], select { padding: .4rem; border: 1px solid #bbb; border-radius: 6px; }
+.chips label { display: block; padding: .2rem 0; }
+.done { text-decoration: line-through; opacity: .5; }
+@media print { nav, button, .noprint { display: none !important; } body { background: #fff; } }

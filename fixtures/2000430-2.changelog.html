@@ -1,0 +1,268 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="cleartype" content="on">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="description" content="BrickLink® is the world's largest online marketplace to buy and sell LEGO® parts, Minifigures and sets, both new or used. Search the complete LEGO catalog & create your own BrickLink store.">
+    <meta name="author" content="BrickLink">
+    
+    <title>BrickLink Inventory Change Log</title>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="//static.bricklink.com/renovate/img/favicon/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="//static.bricklink.com/renovate/img/favicon/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="//static.bricklink.com/renovate/img/favicon/favicon-16x16.png">
+	<link rel="manifest" href="//static.bricklink.com/renovate/img/favicon/webmanifest.json">
+	<link rel="shortcut icon" href="//static.bricklink.com/renovate/img/favicon/favicon.ico">
+
+	<link rel="stylesheet" href="//static.bricklink.com/vendor/jquery-ui-1.13.2/jquery-ui.min.css" />
+	<link rel="stylesheet" href="//static.bricklink.com/vendor/fontawesome-pro-5.9.0-web/css/all.min.css" />
+
+	<link rel="stylesheet" href="//cache.bricklink.info/vendor/multiselect.0.9.11/css/multi-select.css" />
+	<link rel="stylesheet" href="//static.bricklink.com/clone/css/bl_largeimglayer.css"/>
+	<link rel="stylesheet" id="stylesheet" href="//static.bricklink.com/renovate/css/bl_global.build.css"/>
+	<link rel="stylesheet" href="//static.bricklink.com/renovate/css/bl_classic.build.css"/>
+
+	<script type="text/javascript">
+        var url = window.location.href;
+        if(url.indexOf('new_style') != -1) {
+            document.getElementById("stylesheet").setAttribute("href", '//static.bricklink.com/renovate/css/bl_global--new.build.css');
+        }
+    </script>
+	
+	
+	<link rel="stylesheet" href="/lytebox/lytebox.css"/>
+	
+    <script>var _var_ie = 0;</script>
+    <!--[if lte IE 9]><script>_var_ie = 9; </script><![endif]-->
+    <script type="text/javascript" language="javascript" src="//static.bricklink.com/vendor/jquery-1.12.0.min.js"></script>
+	<script type="text/javascript" language="javascript" src="//static.bricklink.com/vendor/jquery-ui-1.13.2/jquery-ui.min.js"></script>
+	<script type="text/javascript" language="javascript" src="//cache.bricklink.info/vendor/jquery.scrollTo.min.js"></script>
+	<script type="text/javascript" language="javascript" src="//static.bricklink.com/vendor/bowser.1.3.0.min.js"></script>
+	<script type="text/javascript" language="javascript" src="//static.bricklink.com/vendor/babel_polyfill.min.js"></script>
+	<script type="text/javascript" language="javascript" src="//static.bricklink.com/renovate/js/bl_common.js"></script>
+	<script src="//static.bricklink.com/_cache/jsaspcommon.58a60679dca63d45cb489d4e839de4dd.js"></script>
+
+	<!-- Legacy Scripts -->
+	<!-- //static.bricklink.com/clone/multiselect/js/jquery.multi-select.js -->
+	<!-- //static.bricklink.com/clone/js/jquery.quicksearch.js -->
+	<script type="text/javascript" language="javascript" src="//cache.bricklink.info/vendor/tinysort.min.js"></script>
+	<script type="text/javascript" language="javascript" src="//static.bricklink.com/renovate/js/classic_common.js"></script>
+	<script type="text/javascript" language="javascript" src="//static.bricklink.com/clone/js/bl_utils.js"></script>
+	
+	<script TYPE="text/javascript" LANGUAGE="javascript" src="/js/msgLinkAlert.js"></script>
+    <script TYPE="text/javascript" LANGUAGE="javascript" src="/js/getAjax.js"></script>
+    <script TYPE="text/javascript" LANGUAGE="javascript" src="/js/compatible.js"></script>
+    <script TYPE="text/javascript" LANGUAGE="javascript" src="/lytebox/lytebox.js"></script>
+    <script TYPE="text/javascript" LANGUAGE="javascript" src="/js/allVars.js"></script>
+	
+   <script type="application/javascript" src="/files/renovate/BLGlobalConstantsJS.file?hashval=375FE3011E2634AE23CCFCBBC63A1D331A93AEFB"></script>
+   <script type="text/javascript" src="//15149e30ace7.us-east-1.sdk.awswaf.com/15149e30ace7/bb2d53562941/challenge.js" defer></script>
+   <script language="javascript">
+      // In ie 9 and below, add class 'ie-9' to html tag -->
+      try 
+      {
+        if ( _var_ie == 9 ) document.documentElement.className = document.documentElement.className + ' ie9 ie-9 ie-align-fix';
+        if ( navigator.userAgent.indexOf ( "NT 6.0") > 0 || ( navigator.userAgent.toLowerCase().indexOf('firefox') > -1 && navigator.userAgent.indexOf ( "NT 6.1" ) > 0 ) ) 
+        {
+          document.documentElement.className = document.documentElement.className + ' bl-alt-font';
+        }
+        /*
+        if ( bowser.safari && ( bowser.version.indexOf( "7." ) == 0 || bowser.version.indexOf( "8." ) == 0 ) ) document.documentElement.className = document.documentElement.className + ' ie9 ie-9 bl-safari-compatible';
+        */
+        // In ie 10 , add class 'ie-9' to html tag -->
+        if ( Function('/*@cc_on return document.documentMode===10@*/')() ) document.documentElement.className = document.documentElement.className + ' ie10 ie-10';
+
+        // In ie 11, add class 'ie-11' to html tag
+        if ( !!window.MSInputMethodContext && !!document.documentMode ) document.documentElement.className = document.documentElement.className + ' ie11 ie-11';
+      } 
+      catch ( e ) {}
+
+      function catToolBar()
+      {
+        window.open('//www.bricklink.com/js/toolBarCat.html','400x200','toolbar=no,status=no,scrollbars=yes,location=no,menubar=no,directories=no,width=600,height=400')
+      }
+
+      var blo_server_time = "Fri Oct 30 05:03:29 EDT 2026";
+
+      var blo_session   = {"is_loggedin":false,"display_currency":45,"display_currency_sign":"DKK ","detected_country":"DK","detected_region":0,"detected_postalcode":"7190","detected_continent":6,"detected_EU":true,"user":{"user_no":0,"callback":"this is callback value!"}};
+      var blo_config    = {"use_lego_account": false, "cookie_name_cookie_setting":"blckCookieSetting"};
+      var blo_host      = {"www_host":"www.bricklink.com","store_host":"store.bricklink.com","alpha_host":"www.bricklink.com","img_host":"img.bricklink.com","static_host":"static.bricklink.com","file_host":"file.bricklink.com","profile_host":"profile.bricklink.com","cache_host":"static.bricklink.com","api_host":"api.bricklink.com","cmsapi_host":"cms-api.bricklink.com","consentapi_host":"consent-api.bricklink.com","studioforum_host":"forum.bricklink.com","v2portal_host":"v2.bricklink.com","member_host":"account.prod.member.bricklink.info","cache2_host":"cache2.bricklink.com"};
+      var blo_env_cookie = {"BLNEWSESSIONID":"BLNEWSESSIONID","blCartBuyerID":"blCartBuyerID","blDNS":"blDNS","blckCookieSetting":"blckCookieSetting","bricklink.bricklink-account.jwt":"bricklink.bricklink-account.jwt","bricklink.lego-account.access-token":"bricklink.lego-account.access-token","bricklink.lego-account.id-token":"bricklink.lego-account.id-token","bricklink.lego-account.refresh-token":"bricklink.lego-account.refresh-token","bricklink.portal.user-guid":"bricklink.portal.user-guid","bricklink.cookie-settings.user-settings":"bricklink.cookie-settings.user-settings","bricklink.profile.id-pic-last-updated":"bricklink.profile.id-pic-last-updated","bricklink.portal.locale":"bricklink.portal.locale","bricklink.portal.visitor-is-a-grown-up":"bricklink.portal.visitor-is-a-grown-up","bricklink.portal.has-dismissed-necessary-cookies-banner":"bricklink.portal.has-dismissed-necessary-cookies-banner","bricklink.portal.session-id":"bricklink.portal.session-id","bricklink.portal.homepage":"bricklink.portal.homepage"};
+
+      bl.util.registerToBL( "session", blo_session );
+      bl.util.registerToBL( "host", blo_host );
+      bl.util.registerToBL( "config", blo_config );
+      
+    </script>
+	<!-- Matomo -->
+	<script>
+	 const debugMode = "N";
+	 const siteId = (debugMode == "Y")?"13":"12";
+	 
+	 if ( bl.util.isCookieEnabled( "TGA" ) )
+	 {
+		  var _paq = window._paq = window._paq || [];
+		  /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+		  _paq.push(['trackPageView']);
+      _paq.push(['setCookieDomain', 'bricklink.com']);
+      _paq.push(['setVisitorCookieTimeout', 31536000]); 
+		  _paq.push(['enableLinkTracking']);
+		  (function() {
+		    var u="//matomo.apps.lego.com/";
+		    _paq.push(['setTrackerUrl', u+'matomo.php']);
+		    _paq.push(['setSiteId', siteId]);
+		    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+		    g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+		  })();
+  	}
+
+    if ( bl.util.isCookieEnabled( "TGA" ) ){
+      var _mtm = window._mtm = window._mtm || [];
+      _mtm.push({'mtm.startTime': (new Date().getTime()), 'event': 'mtm.Start'});
+      var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+      g.async=true; g.src='https://matomo.apps.lego.com/js/container_gWXSJnOW.js'; s.parentNode.insertBefore(g,s);
+    }
+	</script>
+	<!-- End Matomo Code -->  
+ 
+	<script>
+		$( document ).ready( 
+			function ()
+			{
+				$( ".nav-logo" ).click( 
+					function ( e ) 
+					{ 
+						if ( e.ctrlKey ) 
+						{ 
+							var	openUrl;
+							e.preventDefault(); 
+							e.stopPropagation(); 
+							
+							if ( window.location.href.indexOf( "?" ) > 0 )
+								openUrl	= window.location.href.replace( ".asp?", ".asp?showOld=Y&" );
+							else 
+								openUrl	= window.location.href.replace( ".asp", ".asp?showOld=Y" );
+							window.open( openUrl, "_blank" );
+						} 
+					}
+				);
+
+				if($('.roadmap-releases__nav').length > 0) {
+					$('.roadmap-releases__nav li').on('click', function() {
+						var _this = $(this);
+						var clickedID = _this.attr('data-release-nav-id');
+
+						_this.addClass('is-active');
+						$('.roadmap-releases__nav li').not(_this).removeClass('is-active');
+
+						$('.roadmap-releases__content-internal[data-release-id="' + clickedID + '"').addClass('is-active');
+						$('.roadmap-releases__content-internal').not($('.roadmap-releases__content-internal[data-release-id="' + clickedID + '"]')).removeClass('is-active');
+					});
+				}
+			}
+		);
+	</script>
+  </head>
+  
+  <body id="brick-link">
+  
+  <link rel="stylesheet" href="//static2.bricklink.com/_build/css/blp-nav-fixed.build.css">
+  <script src="//static2.bricklink.com/js/dist/blp-header-data.js" type="text/javascript"></script>
+  <script src="//static2.bricklink.com/js/dist/blp-header.js" type="text/javascript"></script>
+  <div id="bl-header">
+    <div id="js-blp-header" class="blp"></div>
+  </div>
+  <script type="text/javascript">
+	  var isSellerVerificationNeeded = false
+  </script>
+  <script src="//static2.bricklink.com/js/dist/dsa-compliance.js" type="text/javascript"></script>
+
+  <script>
+    window.initBLPHeader();
+  </script>
+  
+<!-- Or url = "/regLogin.asp" Or url = "/register.asp" -->
+
+
+	
+			<div class="bl-classic">
+				<center>
+				<table id="id-main-legacy-table" class="tb-main-content" border="0" cellspacing="0" cellpadding="0" width="779">
+					<tr bgcolor="#306fa3">
+						<td bgcolor="#ffffff" style="min-height: 100px;" align="left" >
+						<!-- mError:  -->
+						<!-- Classic Contents Start -->
+		
+<TABLE BORDER="0" CELLPADDING="10" CELLSPACING="5" WIDTH="100%" BGCOLOR="#FFFFFF">
+
+ <TR BGCOLOR="#EEEEEE">
+  <TD><B><FONT FACE="Arial"><A HREF="/catalog.asp">Catalog</A>: <A HREF="catalogTree.asp?itemType=S">Sets</A>: <A HREF="catalogList.asp?catType=S&catString=166">Educational & Dacta</A>: <A HREF="catalogList.asp?catType=S&catString=166%2E803">SERIOUS PLAY</A>: <A HREF="/v2/catalog/catalogitem.page?S=2000430-2">2000430-2</A>: <A HREF="/catalogItemInv.asp?S=2000430-2">Inv</A>: Change Log</FONT></TD>
+ </TR>
+
+</TABLE>
+<TABLE BORDER="0" CELLPADDING="10" CELLSPACING="0" WIDTH="100%" BGCOLOR="#FFFFFF"><TR><TD VALIGN="TOP"><FONT FACE="Tahoma,Arial" SIZE="2"><P><CENTER><FONT CLASS="fv">[ <A HREF="catalogInvChangeItem.asp?nID=&nDate=&viewDate=N&viewType=E&viewStatus=1&itemType=S&itemNo=2000430%2D2">Hide Dates</A> ]</FONT></CENTER><P><TABLE BORDER="0" CELLPADDING="5" CELLSPACING="0" WIDTH="100%" CLASS="ta"><TR BGCOLOR="#5E5A80" HEIGHT="20" CLASS="colorF"><TD>&nbsp;<B>Change Description</B></TD><TD>&nbsp;<B>By</B></TD><TD ALIGN="RIGHT">&nbsp;<B>Replies</B>&nbsp;</TD></TR><TR><TD BGCOLOR="#C0C0C0" COLSPAN="3" ALIGN="CENTER"><B>&nbsp;Jul 2, 2023</B></TD></TR><TR BGCOLOR="#FFFFFF"><TD>&nbsp;In&nbsp;Set&nbsp;<B><A HREF="/v2/catalog/catalogitem.page?S=2000430-2">2000430-2&nbsp;Serious Play Identity and Landscape Kit {2022 Version}</B></A> (<B><A HREF="/catalogItemInv.asp?S=2000430-2">Inv</A></B>):</TD><TD CLASS="fv">&nbsp;<A HREF="/contact.asp?u=randyf">randyf</A>&nbsp;<A HREF="/feedback.asp?u=randyf">(458)</A><A HREF="http://www.bricklink.com/help.asp?helpID=54"><IMG ALT="" WIDTH="16" HSPACE="3" ALIGN="ABSMIDDLE" HEIGHT="16" BORDER="0" SRC="/images/bricks/star2.png"></A></TD><TD ALIGN="RIGHT">&nbsp;</TD></TR><TR BGCOLOR="#FFFFFF"><TD COLSPAN="5"><UL style="padding-left:0px;"><A HREF="/help.asp?helpID=215#st"><IMG style="margin:1px 1px 0 0;" class="l-v-top" BORDER="0" SRC="/images/statusBigA.png" WIDTH="16" HEIGHT="16" ALT="Updated Directly" TITLE="Updated Directly"ALIGN="ABSMIDDLE"></A>Changed&nbsp;2&nbsp;Part&nbsp;Trans-Light Blue&nbsp;<A HREF="/v2/catalog/catalogitem.page?P=72475">72475&nbsp;Windscreen 3 x 4 x 4 Inverted, Rounded Top Corners, Cutout Bottom Corners</A>&nbsp;{Regular to Alternate}&nbsp;(Match ID 3)<BR><INPUT TYPE="HIDDEN" NAME="change173326" VALUE="2000430-2 Serious Play Identity and Landscape Kit {2022 Version}. Change 2 Part Trans-Light Blue 72475 Windscreen 3 x 4 x 4 Inverted, Rounded Top Corners, Cutout Bottom Corners {Regular to Alternate} (Match ID 3)"></UL></TD></TR><TR BGCOLOR="#EEEEEE"><TD>&nbsp;In&nbsp;Set&nbsp;<B><A HREF="/v2/catalog/catalogitem.page?S=2000430-2">2000430-2&nbsp;Serious Play Identity and Landscape Kit {2022 Version}</B></A> (<B><A HREF="/catalogItemInv.asp?S=2000430-2">Inv</A></B>):</TD><TD CLASS="fv">&nbsp;<A HREF="/contact.asp?u=joesecc">joesecc</A>&nbsp;<A HREF="/feedback.asp?u=joesecc">(6348)</A><A HREF="http://www.bricklink.com/help.asp?helpID=54"><IMG ALT="" WIDTH="16" HSPACE="3" ALIGN="ABSMIDDLE" HEIGHT="16" BORDER="0" SRC="/images/bricks/star7.png"></A></TD><TD ALIGN="RIGHT">0&nbsp;<A HREF="/messageThread.asp?ID=342150"><IMG BORDER="0" SRC="/images/msg16.png" ALIGN="ABSMIDDLE" WIDTH="16" HEIGHT="16"></A>&nbsp;</TD></TR><TR BGCOLOR="#EEEEEE"><TD COLSPAN="5"><UL style="padding-left:0px;"><A HREF="/help.asp?helpID=215#st"><IMG style="margin:1px 1px 0 0;" class="l-v-top" BORDER="0" SRC="/images/statusBig1.png" WIDTH="16" HEIGHT="16" ALT="Completed" TITLE="Completed"ALIGN="ABSMIDDLE"></A>Added&nbsp;2&nbsp;Part&nbsp;Trans-Light Blue&nbsp;<A HREF="/v2/catalog/catalogitem.page?P=72475">72475&nbsp;Windscreen 3 x 4 x 4 Inverted, Rounded Top Corners, Cutout Bottom Corners</A>&nbsp;&nbsp;(Match ID 3)<BR><INPUT TYPE="HIDDEN" NAME="change173323" VALUE="2000430-2 Serious Play Identity and Landscape Kit {2022 Version}. Add 2 Part Trans-Light Blue 72475 Windscreen 3 x 4 x 4 Inverted, Rounded Top Corners, Cutout Bottom Corners  (Match ID 3)"></UL></TD></TR><TR BGCOLOR="#FFFFFF"><TD>&nbsp;In&nbsp;Set&nbsp;<B><A HREF="/v2/catalog/catalogitem.page?S=2000430-2">2000430-2&nbsp;Serious Play Identity and Landscape Kit {2022 Version}</B></A> (<B><A HREF="/catalogItemInv.asp?S=2000430-2">Inv</A></B>):</TD><TD CLASS="fv">&nbsp;<A HREF="/contact.asp?u=joesecc">joesecc</A>&nbsp;<A HREF="/feedback.asp?u=joesecc">(6348)</A><A HREF="http://www.bricklink.com/help.asp?helpID=54"><IMG ALT="" WIDTH="16" HSPACE="3" ALIGN="ABSMIDDLE" HEIGHT="16" BORDER="0" SRC="/images/bricks/star7.png"></A></TD><TD ALIGN="RIGHT">0&nbsp;<A HREF="/messageThread.asp?ID=342149"><IMG BORDER="0" SRC="/images/msg16.png" ALIGN="ABSMIDDLE" WIDTH="16" HEIGHT="16"></A>&nbsp;</TD></TR><TR BGCOLOR="#FFFFFF"><TD COLSPAN="5"><UL style="padding-left:0px;"><A HREF="/help.asp?helpID=215#st"><IMG style="margin:1px 1px 0 0;" class="l-v-top" BORDER="0" SRC="/images/statusBig1.png" WIDTH="16" HEIGHT="16" ALT="Completed" TITLE="Completed"ALIGN="ABSMIDDLE"></A>Changed&nbsp;2&nbsp;Part&nbsp;Trans-Brown&nbsp;<A HREF="/v2/catalog/catalogitem.page?P=72475">72475&nbsp;Windscreen 3 x 4 x 4 Inverted, Rounded Top Corners, Cutout Bottom Corners</A>&nbsp;&nbsp;{Match ID 0 to 3}<BR><INPUT TYPE="HIDDEN" NAME="change173322" VALUE="2000430-2 Serious Play Identity and Landscape Kit {2022 Version}. Change 2 Part Trans-Brown 72475 Windscreen 3 x 4 x 4 Inverted, Rounded Top Corners, Cutout Bottom Corners  {Match ID 0 to 3 }"></UL></TD></TR><TR BGCOLOR="#EEEEEE"><TD>&nbsp;In&nbsp;Set&nbsp;<B><A HREF="/v2/catalog/catalogitem.page?S=2000430-2">2000430-2&nbsp;Serious Play Identity and Landscape Kit {2022 Version}</B></A> (<B><A HREF="/catalogItemInv.asp?S=2000430-2">Inv</A></B>):</TD><TD CLASS="fv">&nbsp;<A HREF="/contact.asp?u=joesecc">joesecc</A>&nbsp;<A HREF="/feedback.asp?u=joesecc">(6348)</A><A HREF="http://www.bricklink.com/help.asp?helpID=54"><IMG ALT="" WIDTH="16" HSPACE="3" ALIGN="ABSMIDDLE" HEIGHT="16" BORDER="0" SRC="/images/bricks/star7.png"></A></TD><TD ALIGN="RIGHT">0&nbsp;<A HREF="/messageThread.asp?ID=342148"><IMG BORDER="0" SRC="/images/msg16.png" ALIGN="ABSMIDDLE" WIDTH="16" HEIGHT="16"></A>&nbsp;</TD></TR><TR BGCOLOR="#EEEEEE"><TD COLSPAN="5"><UL style="padding-left:0px;"><A HREF="/help.asp?helpID=215#st"><IMG style="margin:1px 1px 0 0;" class="l-v-top" BORDER="0" SRC="/images/statusBig1.png" WIDTH="16" HEIGHT="16" ALT="Completed" TITLE="Completed"ALIGN="ABSMIDDLE"></A>Added&nbsp;16&nbsp;Part&nbsp;Trans-Red&nbsp;<A HREF="/v2/catalog/catalogitem.page?P=4740">4740&nbsp;Dish 2 x 2 Inverted (Radar)</A>&nbsp;(Alternate)&nbsp;(Match ID 2)<BR><INPUT TYPE="HIDDEN" NAME="change173321" VALUE="2000430-2 Serious Play Identity and Landscape Kit {2022 Version}. Add 16 Part Trans-Red 4740 Dish 2 x 2 Inverted (Radar) (Alternate) (Match ID 2)"></UL></TD></TR><TR BGCOLOR="#FFFFFF"><TD>&nbsp;In&nbsp;Set&nbsp;<B><A HREF="/v2/catalog/catalogitem.page?S=2000430-2">2000430-2&nbsp;Serious Play Identity and Landscape Kit {2022 Version}</B></A> (<B><A HREF="/catalogItemInv.asp?S=2000430-2">Inv</A></B>):</TD><TD CLASS="fv">&nbsp;<A HREF="/contact.asp?u=joesecc">joesecc</A>&nbsp;<A HREF="/feedback.asp?u=joesecc">(6348)</A><A HREF="http://www.bricklink.com/help.asp?helpID=54"><IMG ALT="" WIDTH="16" HSPACE="3" ALIGN="ABSMIDDLE" HEIGHT="16" BORDER="0" SRC="/images/bricks/star7.png"></A></TD><TD ALIGN="RIGHT">0&nbsp;<A HREF="/messageThread.asp?ID=342147"><IMG BORDER="0" SRC="/images/msg16.png" ALIGN="ABSMIDDLE" WIDTH="16" HEIGHT="16"></A>&nbsp;</TD></TR><TR BGCOLOR="#FFFFFF"><TD COLSPAN="5"><UL style="padding-left:0px;"><A HREF="/help.asp?helpID=215#st"><IMG style="margin:1px 1px 0 0;" class="l-v-top" BORDER="0" SRC="/images/statusBig1.png" WIDTH="16" HEIGHT="16" ALT="Completed" TITLE="Completed"ALIGN="ABSMIDDLE"></A>Changed&nbsp;16&nbsp;Part&nbsp;Trans-Neon Orange&nbsp;<A HREF="/v2/catalog/catalogitem.page?P=4740">4740&nbsp;Dish 2 x 2 Inverted (Radar)</A>&nbsp;&nbsp;{Match ID 0 to 2}<BR><INPUT TYPE="HIDDEN" NAME="change173320" VALUE="2000430-2 Serious Play Identity and Landscape Kit {2022 Version}. Change 16 Part Trans-Neon Orange 4740 Dish 2 x 2 Inverted (Radar)  {Match ID 0 to 2 }"></UL></TD></TR><TR><TD BGCOLOR="#C0C0C0" COLSPAN="3" ALIGN="CENTER"><B>&nbsp;Jul 1, 2023</B></TD></TR><TR BGCOLOR="#EEEEEE"><TD>&nbsp;In&nbsp;Set&nbsp;<B><A HREF="/v2/catalog/catalogitem.page?S=2000430-2">2000430-2&nbsp;Serious Play Identity and Landscape Kit {2022 Version}</B></A> (<B><A HREF="/catalogItemInv.asp?S=2000430-2">Inv</A></B>):</TD><TD CLASS="fv">&nbsp;<A HREF="/contact.asp?u=joesecc">joesecc</A>&nbsp;<A HREF="/feedback.asp?u=joesecc">(6348)</A><A HREF="http://www.bricklink.com/help.asp?helpID=54"><IMG ALT="" WIDTH="16" HSPACE="3" ALIGN="ABSMIDDLE" HEIGHT="16" BORDER="0" SRC="/images/bricks/star7.png"></A></TD><TD ALIGN="RIGHT">0&nbsp;<A HREF="/messageThread.asp?ID=342130"><IMG BORDER="0" SRC="/images/msg16.png" ALIGN="ABSMIDDLE" WIDTH="16" HEIGHT="16"></A>&nbsp;</TD></TR><TR BGCOLOR="#EEEEEE"><TD COLSPAN="5"><UL style="padding-left:0px;"><A HREF="/help.asp?helpID=215#st"><IMG style="margin:1px 1px 0 0;" class="l-v-top" BORDER="0" SRC="/images/statusBig1.png" WIDTH="16" HEIGHT="16" ALT="Completed" TITLE="Completed"ALIGN="ABSMIDDLE"></A>Added&nbsp;2&nbsp;Part&nbsp;Trans-Light Blue&nbsp;<A HREF="/v2/catalog/catalogitem.page?P=50747">50747&nbsp;Windscreen 6 x 6 x 3 Canopy Dome Half Sphere with Dual 2 Fingers</A>&nbsp;(Alternate)&nbsp;(Match ID 1)<BR><INPUT TYPE="HIDDEN" NAME="change173315" VALUE="2000430-2 Serious Play Identity and Landscape Kit {2022 Version}. Add 2 Part Trans-Light Blue 50747 Windscreen 6 x 6 x 3 Canopy Dome Half Sphere with Dual 2 Fingers (Alternate) (Match ID 1)"></UL></TD></TR><TR BGCOLOR="#FFFFFF"><TD>&nbsp;In&nbsp;Set&nbsp;<B><A HREF="/v2/catalog/catalogitem.page?S=2000430-2">2000430-2&nbsp;Serious Play Identity and Landscape Kit {2022 Version}</B></A> (<B><A HREF="/catalogItemInv.asp?S=2000430-2">Inv</A></B>):</TD><TD CLASS="fv">&nbsp;<A HREF="/contact.asp?u=joesecc">joesecc</A>&nbsp;<A HREF="/feedback.asp?u=joesecc">(6348)</A><A HREF="http://www.bricklink.com/help.asp?helpID=54"><IMG ALT="" WIDTH="16" HSPACE="3" ALIGN="ABSMIDDLE" HEIGHT="16" BORDER="0" SRC="/images/bricks/star7.png"></A></TD><TD ALIGN="RIGHT">0&nbsp;<A HREF="/messageThread.asp?ID=342128"><IMG BORDER="0" SRC="/images/msg16.png" ALIGN="ABSMIDDLE" WIDTH="16" HEIGHT="16"></A>&nbsp;</TD></TR><TR BGCOLOR="#FFFFFF"><TD COLSPAN="5"><UL style="padding-left:0px;"><A HREF="/help.asp?helpID=215#st"><IMG style="margin:1px 1px 0 0;" class="l-v-top" BORDER="0" SRC="/images/statusBig1.png" WIDTH="16" HEIGHT="16" ALT="Completed" TITLE="Completed"ALIGN="ABSMIDDLE"></A>Changed&nbsp;2&nbsp;Part&nbsp;Trans-Brown&nbsp;<A HREF="/v2/catalog/catalogitem.page?P=50747">50747&nbsp;Windscreen 6 x 6 x 3 Canopy Dome Half Sphere with Dual 2 Fingers</A>&nbsp;&nbsp;{Match ID 0 to 1}<BR><INPUT TYPE="HIDDEN" NAME="change173313" VALUE="2000430-2 Serious Play Identity and Landscape Kit {2022 Version}. Change 2 Part Trans-Brown 50747 Windscreen 6 x 6 x 3 Canopy Dome Half Sphere with Dual 2 Fingers  {Match ID 0 to 1 }"></TD></TR></TABLE><P><CENTER></CENTER></TD></TR></TABLE>
+<SCRIPT language="javascript">
+function toggleCheckbox( type, id) {
+     if (type == "A") {
+        if ( $("#box1-" + id).prop("checked") )
+        {
+           $("#box2-" + id).prop("checked", false);
+        }
+     }
+     if (type == "R") {
+        if ( $("#box2-" + id).prop("checked") )
+        {
+           $("#box1-" + id).prop("checked", false);
+        }
+     }
+  }
+</SCRIPT>
+
+
+<!-- Classic Contents End-->
+</td></tr>
+</table>
+</center>
+</div>
+
+  <div class="blp blp-footer__container" id="js-blp-footer"></div>
+  <script>
+    window.initBLPFooter();
+  </script>
+  <div class="bl-3" id="blGlobalFooter">
+    <script>
+      if (bl.util.isCookieEnabled("TGA")) <!-- Check if statistics cookies are allowed-->
+      {
+        /*Copyright 2011-2015 iPerceptions, Inc. All rights reserved. Do not distribute.iPerceptions provides this code 'as is' without warranty of any kind, either express or implied. */ 
+        window.iperceptionskey = 'eabaab3f-1019-419e-8fe2-aa24decf6449';
+        (function () { var a = document.createElement('script'),b = document.getElementsByTagName('body')[0]; a.type = 'text/javascript'; a.async = true;a.src = '//static.bricklink.com/vendor/iperception/wrapper_self_hosted.js';b.appendChild(a);})();
+      }
+    </script>
+  </div> <!-- .bl-3 -->
+
+<!-- <script>
+	$(document).ready(
+		function() {
+			var systemTime = $("#systemtime").html();
+			systemTime = systemTime.replace("January", "Jan");
+			systemTime = systemTime.replace("February", "Feb");
+			systemTime = systemTime.replace("March", "Mar");
+			systemTime = systemTime.replace("April", "Apr");
+			systemTime = systemTime.replace("June", "Jun");
+			systemTime = systemTime.replace("July", "Jul");
+			systemTime = systemTime.replace("August", "Aug");
+			systemTime = systemTime.replace("September", "Sep");
+			systemTime = systemTime.replace("October", "Oct");
+			systemTime = systemTime.replace("November", "Nov");
+			systemTime = systemTime.replace("December", "Dec");
+			$("#systemtime").html(systemTime);
+		}
+	)
+</script> -->
+</body>
+</html>
+
+<!-- 'ocp_xss catalogInvChangeItem.asp - 66 67 68 69 70 71 72 73 74 75 77 78 79 225 228 235 241 282 283 284 285 286 291 364 372 373 408 408 414 414 414 414 414 414 414 414 608 608 -->

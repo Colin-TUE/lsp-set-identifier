@@ -1,0 +1,12 @@
+https://www.bricklink.com/catalogItemInv.asp?S=2000409-2
+https://www.bricklink.com/catalogItemInv.asp?S=2000414-2
+https://www.bricklink.com/catalogItemInv.asp?S=2000414-3
+https://www.bricklink.com/catalogItemInv.asp?S=2000414-4
+https://www.bricklink.com/catalogItemInv.asp?S=2000431-1
+https://www.bricklink.com/catalogItemInv.asp?S=2000430-1
+https://www.bricklink.com/catalogItemInv.asp?S=2000430-2
+https://www.bricklink.com/catalogItemInv.asp?S=2000410-1
+https://www.bricklink.com/catalogItemInv.asp?S=2000416-1
+# Sets without a BrickLink inventory (listed for completeness only): "!setNo name"
+!2000415-1 Serious Play Identity and Landscape Kit {2010 Version}
+!2000413-1 Serious Play Connections Kit {2010 Version}
