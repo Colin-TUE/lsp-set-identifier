@@ -24,18 +24,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # corepack reads the pinned pnpm version from package.json (packageManager).
-      - name: Enable pnpm
-        run: corepack enable
-
-      - name: Set up Node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .tool-versions
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Set up pnpm and install dependencies
+        uses: ./.github/actions/setup
 
       - name: Install Playwright browser
         run: pnpm exec playwright install --with-deps chromium

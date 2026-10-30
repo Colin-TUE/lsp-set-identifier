@@ -13,25 +13,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify:
+  lint:
     runs-on: ubuntu-slim
 
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # corepack reads the pinned pnpm version from package.json (packageManager).
-      - name: Enable pnpm
-        run: corepack enable
-
-      - name: Set up Node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .tool-versions
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Set up pnpm and install dependencies
+        uses: ./.github/actions/setup
 
       - name: Format check
         run: pnpm format:check
@@ -39,8 +29,28 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: Typecheck and build
-        run: pnpm build
+  typecheck:
+    runs-on: ubuntu-slim
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up pnpm and install dependencies
+        uses: ./.github/actions/setup
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+  test:
+    runs-on: ubuntu-slim
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up pnpm and install dependencies
+        uses: ./.github/actions/setup
 
       - name: Test with coverage
         run: pnpm test:coverage
@@ -48,3 +58,16 @@ jobs:
       - name: Coverage summary
         if: always()
         run: node scripts/coverage-summary.mjs >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    runs-on: ubuntu-slim
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up pnpm and install dependencies
+        uses: ./.github/actions/setup
+
+      - name: Build
+        run: pnpm exec vite build
