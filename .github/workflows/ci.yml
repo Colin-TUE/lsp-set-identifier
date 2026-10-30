@@ -16,22 +16,35 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@d9184bf108216479bc5a137cc391f4d7b14c870b # v6.1.0
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .tool-versions
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Format check
         run: pnpm format:check
+
       - name: Lint
         run: pnpm lint
+
       - name: Typecheck and build
         run: pnpm build
+
       - name: Test with coverage
         run: pnpm test:coverage
+
       - name: Coverage report on PR
         if: github.event_name == 'pull_request' && always()
-        uses: davelosert/vitest-coverage-report-action@v2
+        uses: davelosert/vitest-coverage-report-action@8f86cfb56ed6d5613ea8cdc5259f207fbfd51ece # v2.13.1
