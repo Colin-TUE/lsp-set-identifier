@@ -84,6 +84,15 @@ const invLink = (setNo: string) => {
     sets.find((s) => s.setNo === setNo)?.sourceUrl ?? `https://www.bricklink.com/catalogItemInv.asp?S=${setNo}`;
   return link(url, 'BrickLink inventory ↗', { external: true });
 };
+/** Product number as printed on the box: BrickLink's "2000414-4" without the "-4" variant suffix. */
+const productNo = (setNo: string) => setNo.replace(/-\d+$/, '');
+/** Product name without BrickLink's variant notes like "(214 Pieces Version)" or "{2013 Version}". */
+const productName = (name: string) => name.replace(/\s*[({][^)}]*[)}]\s*$/, '');
+const products = [
+  ...new Map(
+    sets.filter((s) => !s.noInventory).map((s) => [productNo(s.setNo), productName(s.name)] as const),
+  ).entries(),
+].sort(([a], [b]) => a.localeCompare(b));
 const resetIdentify = () => {
   state.obs = [];
   state.answers = [];
@@ -93,7 +102,7 @@ const resetIdentify = () => {
 const partHtml = (i: Item, trailing = '') => partRow(i, { img: imgUrl(i), trailing });
 
 function candidates(): ResolvedVersion[] {
-  let c = versions.filter((v) => !state.setFilter || v.setNo === state.setFilter);
+  let c = versions.filter((v) => !state.setFilter || productNo(v.setNo) === state.setFilter);
   for (const a of state.answers) c = c.filter((v) => a.keep.includes(v.key));
   // Parts the user has entered rule out versions that do not contain them (unless that would rule out everything).
   const has = (v: ResolvedVersion, k: string) => v.parts.some((p) => itemKey(p) === k);
@@ -204,12 +213,10 @@ function renderIdentify(): string {
   // Box picker: which set is printed on the box narrows things down a lot.
   const setOptions = [
     { value: '', label: 'Any set / not sure', selected: false },
-    ...sets
-      .filter((s) => !s.noInventory)
-      .map((s) => ({ value: s.setNo, label: `${s.setNo} ${s.name}`, selected: s.setNo === state.setFilter })),
+    ...products.map(([no, name]) => ({ value: no, label: `${no} ${name}`, selected: no === state.setFilter })),
   ];
   const narrow = row(
-    field('Set number on the box', select(setOptions, { id: 'setFilter' })) +
+    field('Product number on the box', select(setOptions, { id: 'setFilter' })) +
       spacer() +
       (progressed ? button('Start over', { variant: 'ghost', attrs: { id: 'resetAns' } }) : ''),
   );
