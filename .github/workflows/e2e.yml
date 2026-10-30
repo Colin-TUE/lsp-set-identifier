@@ -1,8 +1,9 @@
 name: E2E
 
-# Acceptance tests in a real browser. Kept out of the regular CI so it stays fast:
-# runs on main and can be started by hand (Actions tab > E2E > Run workflow) on any branch before a merge.
+# Acceptance tests in a real browser, in their own workflow so they don't slow down the regular CI.
+# Runs on pull requests and main, and can be started by hand (Actions tab > E2E > Run workflow) on any branch.
 on:
+  pull_request:
   workflow_dispatch:
   push:
     branches: [main]
@@ -43,7 +44,7 @@ jobs:
         run: pnpm test:e2e
 
       - name: Upload Playwright report
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: playwright-report
