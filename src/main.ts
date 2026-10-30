@@ -93,8 +93,12 @@ const products = [
     sets.filter((s) => !s.noInventory).map((s) => [productNo(s.setNo), productName(s.name)] as const),
   ).entries(),
 ].sort(([a], [b]) => a.localeCompare(b));
-const resetIdentify = () => {
-  state.obs = [];
+const resetIdentify = (keepParts = false) => {
+  if (!keepParts) {
+    // Moving on to a new box: forget its parts and the product number picked for it.
+    state.obs = [];
+    state.setFilter = '';
+  }
   state.answers = [];
   state.skipped.clear();
 };
@@ -208,7 +212,7 @@ function candidateDetails(r: ReturnType<typeof identify>[number], cands: Resolve
 function renderIdentify(): string {
   const cands = candidates();
   const ranked = identify(cands, state.obs);
-  const progressed = state.obs.length || state.answers.length || state.skipped.size;
+  const progressed = state.answers.length || state.skipped.size;
 
   // Box picker: which set is printed on the box narrows things down a lot.
   const setOptions = [
@@ -655,7 +659,8 @@ document.addEventListener('click', (e) => {
     const qid = questionId(currentQ);
     if (d.ans === 'skip') state.skipped.add(qid);
     else state.answers.push({ qid, keep: d.ans === 'A' ? currentQ.aSet : currentQ.bSet });
-  } else if (t.id === 'resetAns' || t.id === 'nextBox') resetIdentify();
+  } else if (t.id === 'resetAns') resetIdentify(true); // keep the looked-up parts
+  else if (t.id === 'nextBox') resetIdentify();
   else if (t.id === 'clearChk') {
     if (!confirm('Clear all ticks?')) return;
     state.checked.clear();
