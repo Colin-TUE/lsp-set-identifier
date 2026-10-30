@@ -1,4 +1,4 @@
-import './style.css';
+import { button, card, checkbox, collapsible, divider, esc, field, heading, link, listRow, listRowMeta, muted, mutedInline, notice, numberInput, page, paragraph, partRow, pending, qty, row, select, tabs, textInput } from './ui';
 import { sets } from './data/sets.generated';
 import { versionOverrides, extraVersions, mergeDates } from './data/versions';
 import { imgUrl, itemKey, type Item, type ResolvedVersion } from './data/types';
@@ -9,7 +9,6 @@ const versions = resolveAll(sets, versionOverrides, extraVersions, mergeDates);
 const index = itemIndex(versions);
 const byKey = new Map(versions.map((v) => [v.key, v]));
 const vLabel = (v: ResolvedVersion) => `${v.setNo} ${v.setName} · ${v.name}${v.pending ? ' (pending)' : ''}`;
-const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 const label = (i: Item) => `${i.partId} | ${i.colorName} | ${i.name}`;
 
 const state = {
@@ -29,13 +28,10 @@ const inWorkshop = () => versions.filter((v) => count(v) > 0);
 const itemOf = (k: string) => index.get(k)!;
 const invLink = (setNo: string) => {
   const url = sets.find((s) => s.setNo === setNo)?.sourceUrl ?? `https://www.bricklink.com/catalogItemInv.asp?S=${setNo}`;
-  return `<a href="${url}" target="_blank" rel="noopener">BrickLink inventory</a>`;
+  return link(url, 'BrickLink inventory', { external: true });
 };
 
-function partHtml(i: Item, extra = ''): string {
-  return `<div class="part"><img src="${imgUrl(i)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-    <div class="meta"><b>${esc(i.colorName)}</b> ${esc(i.name)}<br><span class="muted">${esc(i.partId)}</span></div>${extra}</div>`;
-}
+const partHtml = (i: Item, trailing = '') => partRow(i, { img: imgUrl(i), trailing });
 
 function candidates(): ResolvedVersion[] {
   let c = versions.filter((v) => !state.setFilter || v.setNo === state.setFilter);
@@ -57,19 +53,19 @@ function renderQuestion(q: Question): string {
   const side = (keys: string[]) => {
     const seen = new Set<string>();
     const pick = [...keys].sort((x, y) => easy(y) - easy(x)).filter((k) => !seen.has(itemOf(k).partId) && seen.add(itemOf(k).partId)).slice(0, MAX);
-    return `<div class="muted">${keys.length > 1 ? `Any one of these is enough${keys.length > pick.length ? ` (${keys.length} in total)` : ''}:` : ''}</div>` + pick.map((k) => partHtml(itemOf(k))).join('');
+    return muted(keys.length > 1 ? `Any one of these is enough${keys.length > pick.length ? ` (${keys.length} in total)` : ''}:` : '') + pick.map((k) => partHtml(itemOf(k))).join('');
   };
+  const skip = button('Not sure / skip', { attrs: { 'data-ans': 'skip' } });
   if (q.b.length)
-    return `<div class="card"><b>Which do you have?</b><div class="row">
-      <button class="choice" data-ans="A">A${side(q.a)}</button><button class="choice" data-ans="B">B${side(q.b)}</button></div>
-      <button data-ans="skip">Not sure / skip</button></div>`;
-  return `<div class="card"><b>Do you have this?</b>${side(q.a)}<div class="row">
-    <button data-ans="A">Yes</button><button data-ans="B">No</button><button data-ans="skip">Not sure / skip</button></div></div>`;
+    return card(`<b>Which do you have?</b>` + row(
+      button(`A${side(q.a)}`, { variant: 'choice', attrs: { 'data-ans': 'A' } }) + button(`B${side(q.b)}`, { variant: 'choice', attrs: { 'data-ans': 'B' } })) + skip);
+  return card(`<b>Do you have this?</b>${side(q.a)}` + row(
+    button('Yes', { attrs: { 'data-ans': 'A' } }) + button('No', { attrs: { 'data-ans': 'B' } }) + skip));
 }
 
 const brief = (items: Item[], max = 6) => {
   const top = [...items].sort((x, y) => y.qty - x.qty);
-  return top.slice(0, max).map((i) => partHtml(i, `<span class="qty">${i.qty}</span>`)).join('') + (items.length > max ? `<div class="muted">and ${items.length - max} more</div>` : '');
+  return top.slice(0, max).map((i) => partHtml(i, qty(i.qty))).join('') + (items.length > max ? muted(`and ${items.length - max} more`) : '');
 };
 
 function candidateHtml(r: ReturnType<typeof identify>[number], cands: ResolvedVersion[]): string {
@@ -81,85 +77,85 @@ function candidateHtml(r: ReturnType<typeof identify>[number], cands: ResolvedVe
   const ch = prev ? changeFrom(v, prev) : null;
   const total = v.parts.reduce((a, p) => a + p.qty, 0);
   const sec = (t: string, items: Item[]) => (items.length ? `<div><b>${t}</b>${brief(items)}</div>` : '');
-  return `<details class="card ${cands.length === 1 ? 'best' : ''}"><summary><b>${esc(vLabel(v))}</b>
-    <span class="muted"> ${total} pieces${state.obs.length ? `, score ${r.score}` : ''}</span>
-    <button data-add="${v.key}" class="noprint">${count(v) ? `In workshop (${count(v)}) +1` : 'Add to workshop'}</button></summary>
-    <div class="muted">${invLink(v.setNo)} for the full details of ${esc(v.setNo + ' ' + v.setName)}</div>
-    ${r.missing.length ? `<div class="muted">Not in this version: ${r.missing.map((k) => esc(itemOf(k).colorName + ' ' + itemOf(k).partId)).join(', ')}</div>` : ''}
-    ${r.qtyMismatch.length ? `<div class="muted">Different quantity: ${r.qtyMismatch.map((k) => esc(itemOf(k).partId)).join(', ')}</div>` : ''}
-    ${others.length ? sec(`Parts only in this version (${d.onlyHere.length})`, d.onlyHere) + sec(`Parts the other candidates have that this one doesn't (${d.lacks.length})`, d.lacks) : ''}
-    ${ch && (ch.onlyHere.length || ch.lacks.length) ? `<hr>${sec(`Changed since previous version (${prev.name}): now has (${ch.onlyHere.length})`, ch.onlyHere)}${sec(`...instead of (${ch.lacks.length})`, ch.lacks)}` : ''}
-    ${v.extras.length ? sec(`Spares / extras (${v.extras.length})`, v.extras) : ''}</details>`;
+  const summary = `<b>${esc(vLabel(v))}</b> ${mutedInline(`${total} pieces${state.obs.length ? `, score ${r.score}` : ''}`)} ` +
+    button(count(v) ? `In workshop (${count(v)}) +1` : 'Add to workshop', { noPrint: true, attrs: { 'data-add': v.key } });
+  const body = muted(`${invLink(v.setNo)} for the full details of ${esc(v.setNo + ' ' + v.setName)}`) +
+    (r.missing.length ? muted(`Not in this version: ${r.missing.map((k) => esc(itemOf(k).colorName + ' ' + itemOf(k).partId)).join(', ')}`) : '') +
+    (r.qtyMismatch.length ? muted(`Different quantity: ${r.qtyMismatch.map((k) => esc(itemOf(k).partId)).join(', ')}`) : '') +
+    (others.length ? sec(`Parts only in this version (${d.onlyHere.length})`, d.onlyHere) + sec(`Parts the other candidates have that this one doesn't (${d.lacks.length})`, d.lacks) : '') +
+    (ch && (ch.onlyHere.length || ch.lacks.length) ? divider() + sec(`Changed since previous version (${prev.name}): now has (${ch.onlyHere.length})`, ch.onlyHere) + sec(`...instead of (${ch.lacks.length})`, ch.lacks) : '') +
+    (v.extras.length ? sec(`Spares / extras (${v.extras.length})`, v.extras) : '');
+  return collapsible(summary, body, { highlight: cands.length === 1 });
 }
 
 function renderIdentify(): string {
   const cands = candidates();
-  
+
   const opts = [...index.values()].map((i) => `<option value="${esc(label(i))}"></option>`).join('');
   const ws = inWorkshop();
-  let h = ws.length ? `<div class="card"><b>Workshop:</b> ${ws.map((v) => `${count(v)} &times; ${esc(v.setNo + ' ' + v.name)}`).join('; ')} <span class="muted">(edit on the Common parts or Separate tab)</span></div>` : '';
-  h += `<h2>1. Narrow down</h2><div class="card row">
-    <label>Set: <select id="setFilter"><option value="">Any</option>${sets.filter((s) => !s.noInventory).map((s) => `<option value="${s.setNo}" ${s.setNo === state.setFilter ? 'selected' : ''}>${esc(s.setNo + ' - ' + s.name)}</option>`).join('')}</select></label>${state.setFilter ? invLink(state.setFilter) : ''}</div>
-    <h2>2. Parts you know</h2><div class="card">
-    <div class="row"><input type="text" id="partIn" list="parts" placeholder="Part no, name or colour" size="40"><datalist id="parts">${opts}</datalist>
-    <input type="number" id="qtyIn" min="0" placeholder="qty (optional)" style="width:7rem"><button id="addObs">Add</button></div>
-    ${state.obs.map((o, n) => partHtml(itemOf(o.key), `<span class="qty">${o.qty ?? ''}</span><button data-rm="${n}">x</button>`)).join('')}</div>`;
+  let h = ws.length ? card(`<b>Workshop:</b> ${ws.map((v) => `${count(v)} &times; ${esc(v.setNo + ' ' + v.name)}`).join('; ')} ${mutedInline('(edit on the Common parts or Separate tab)')}`) : '';
+  const setOptions = [{ value: '', label: 'Any', selected: false }, ...sets.filter((s) => !s.noInventory).map((s) => ({ value: s.setNo, label: s.setNo + ' - ' + s.name, selected: s.setNo === state.setFilter }))];
+  h += heading(2, '1. Narrow down') + card(field('Set:', select(setOptions, { id: 'setFilter' })) + (state.setFilter ? invLink(state.setFilter) : ''), { row: true });
+  h += heading(2, '2. Parts you know') + card(
+    row(textInput({ id: 'partIn', list: 'parts', placeholder: 'Part no, name or colour', size: 40 }) + `<datalist id="parts">${opts}</datalist>` +
+      numberInput({ id: 'qtyIn', min: 0, placeholder: 'qty (optional)' }, 'md') + button('Add', { attrs: { id: 'addObs' } })) +
+    state.obs.map((o, n) => partHtml(itemOf(o.key), qty(o.qty ?? '') + button('x', { attrs: { 'data-rm': n } }))).join(''));
 
   const q = nextQuestion(cands, state.skipped);
-  h += `<h2>3. Don't know the parts? Answer questions</h2>`;
-  if (state.answers.length || state.skipped.size) h += `<div class="row noprint"><button id="resetAns">Reset answers</button></div>`;
+  h += heading(2, "3. Don't know the parts? Answer questions");
+  if (state.answers.length || state.skipped.size) h += row(button('Reset answers', { attrs: { id: 'resetAns' } }), { noPrint: true });
   if (cands.length > 1 && q) h += renderQuestion(q);
   else {
     currentQ = null;
-    if (cands.length > 1) h += `<div class="card muted">No more questions available.</div>`;
+    if (cands.length > 1) h += notice('No more questions available.');
   }
 
   const noFit = state.obs.length > 0 && !cands.every((v) => state.obs.every((o) => v.parts.some((p) => itemKey(p) === o.key)));
-  if (noFit) h += `<div class="card muted">No version contains all the parts you entered, so the closest matches are shown.</div>`;
-  h += `<h2>Result (${cands.length} candidate${cands.length === 1 ? '' : 's'})</h2>`;
+  if (noFit) h += notice('No version contains all the parts you entered, so the closest matches are shown.');
+  h += heading(2, `Result (${cands.length} candidate${cands.length === 1 ? '' : 's'})`);
   h += identify(cands, state.obs).map((r) => candidateHtml(r, cands)).join('');
   return h;
 }
 
 function versionPicker(): string {
-  const picker = `<details class="card chips"><summary><b>Add or remove sets</b></summary>${sets.filter((s) => !s.noInventory).map((s) => `<b>${s.setNo} ${esc(s.name)}</b> ${invLink(s.setNo)}` +
-    versions.filter((v) => v.setNo === s.setNo).map((v) => `<label><input type="checkbox" data-sel="${v.key}" ${count(v) ? 'checked' : ''}> ${esc(v.name)}${v.pending ? ' <span class="pending">(pending)</span>' : ''}</label>`).join('')).join('<hr>')}</details>`;
+  const picker = collapsible('<b>Add or remove sets</b>', sets.filter((s) => !s.noInventory).map((s) => `<b>${s.setNo} ${esc(s.name)}</b> ${invLink(s.setNo)}` +
+    versions.filter((v) => v.setNo === s.setNo).map((v) => `<label>${checkbox({ 'data-sel': v.key, checked: !!count(v) })} ${esc(v.name)}${v.pending ? ' ' + pending('(pending)') : ''}</label>`).join('')).join(divider()), { list: true });
   const list = inWorkshop();
-  return `<div class="card"><b>Workshop sets</b>${list.length ? list.map((v) => `<div class="row part"><input type="number" min="1" value="${count(v)}" data-cnt="${v.key}" style="width:4.5rem"> &times;
-    <span class="meta">${esc(vLabel(v))}</span><button data-rmws="${v.key}">Remove</button></div>`).join('') : '<div class="muted">No sets yet. Add sets below, or identify a set on the Identify tab and use "Add to workshop".</div>'}</div>` + picker;
+  return card('<b>Workshop sets</b>' + (list.length
+    ? list.map((v) => listRow(numberInput({ min: 1, value: count(v), 'data-cnt': v.key }, 'sm') + ' &times; ' + listRowMeta(esc(vLabel(v))) + button('Remove', { attrs: { 'data-rmws': v.key } }))).join('')
+    : muted('No sets yet. Add sets below, or identify a set on the Identify tab and use "Add to workshop".'))) + picker;
 }
 
-const qtyCells = (vs: ResolvedVersion[], r: PartRow) =>
-  vs.map((v) => `<span class="qty" title="${esc(vLabel(v))}" style="min-width:2.5rem">${r.qty[v.key] ?? '-'}</span>`).join('');
-const legend = (vs: ResolvedVersion[]) => `<div class="muted">Quantity columns: ${vs.map((v, n) => `${n + 1} = ${esc(vLabel(v))}`).join(' | ')}</div>`;
+const qtyCells = (vs: ResolvedVersion[], r: PartRow) => vs.map((v) => qty(r.qty[v.key] ?? '-', { title: vLabel(v) })).join('');
+const legend = (vs: ResolvedVersion[]) => muted(`Quantity columns: ${vs.map((v, n) => `${n + 1} = ${esc(vLabel(v))}`).join(' | ')}`);
 
 function renderCommon(): string {
-  const h = `<h2>Workshop sets</h2>` + versionPicker();
+  const h = heading(2, 'Workshop sets') + versionPicker();
   const vs = inWorkshop();
-  if (vs.length < 2) return h + `<p class="muted">Add at least two different versions to compare.</p>`;
+  if (vs.length < 2) return h + paragraph('Add at least two different versions to compare.', { muted: true });
   const c = compare(vs);
-  const sec = (t: string, rows: PartRow[]) => `<h2>${t} (${rows.length})</h2>${legend(vs)}<div class="muted">Quantities are per box.</div><div class="card">${rows.map((r) => partHtml(r.item, qtyCells(vs, r))).join('') || '<span class="muted">none</span>'}</div>`;
+  const sec = (t: string, rows: PartRow[]) => heading(2, `${t} (${rows.length})`) + legend(vs) + muted('Quantities are per box.') +
+    card(rows.map((r) => partHtml(r.item, qtyCells(vs, r))).join('') || mutedInline('none'));
   return h + sec('In all selected versions', c.all) + sec('In some versions', c.some) + sec('Only in one version', c.unique);
 }
 
 function renderSeparate(): string {
-  let h = `<h2>Workshop sets</h2>` + versionPicker();
+  let h = heading(2, 'Workshop sets') + versionPicker();
   const vs = inWorkshop();
-  if (vs.length < 2) return h + `<p class="muted">Add at least two different versions to get a sorting guide.</p>`;
+  if (vs.length < 2) return h + paragraph('Add at least two different versions to get a sorting guide.', { muted: true });
   const p = separate(vs);
   const total = (r: PartRow, v: ResolvedVersion) => (r.qty[v.key] ?? 0) * count(v);
-  const totalCells = (r: PartRow) => vs.map((v) => `<span class="qty" title="${esc(vLabel(v))}" style="min-width:2.5rem">${r.qty[v.key] ? total(r, v) : '-'}</span>`).join('');
-  const chk = (id: string, i: Item, qtyHtml: string) => `<label class="part ${state.checked.has(id) ? 'done' : ''}"><input type="checkbox" data-chk="${esc(id)}" ${state.checked.has(id) ? 'checked' : ''}>
-    <img src="${imgUrl(i)}" alt="" onerror="this.style.visibility='hidden'"><span class="meta"><b>${esc(i.colorName)}</b> ${esc(i.name)}<br><span class="muted">${esc(i.partId)}</span></span>${qtyHtml}</label>`;
-  h += `<div class="row noprint"><button id="clearChk">Clear checkmarks</button><button id="print">Print</button></div>`;
-  h += `<p class="muted">Quantities are totals for the whole workshop (per-box quantity &times; number of boxes).</p>`;
-  h += `<h2>Step 1: sort parts that belong to only one version</h2>`;
+  const totalCells = (r: PartRow) => vs.map((v) => qty(r.qty[v.key] ? total(r, v) : '-', { title: vLabel(v) })).join('');
+  const chk = (id: string, i: Item, trailing: string) => partRow(i, { img: imgUrl(i), trailing, check: { checked: state.checked.has(id), attrs: { 'data-chk': id } } });
+  const setTitle = (v: ResolvedVersion) => heading(3, `${count(v)} &times; ${esc(vLabel(v))}`);
+  h += row(button('Clear checkmarks', { attrs: { id: 'clearChk' } }) + button('Print', { attrs: { id: 'print' } }), { noPrint: true });
+  h += paragraph('Quantities are totals for the whole workshop (per-box quantity &times; number of boxes).', { muted: true });
+  h += heading(2, 'Step 1: sort parts that belong to only one version');
   for (const v of vs)
-    h += `<h3>${count(v)} &times; ${esc(vLabel(v))}</h3><div class="card">${p.piles[v.key].map((r) => chk(`${v.key}|${r.key}`, r.item, `<span class="qty">${total(r, v)}</span><span class="muted">(${r.qty[v.key]} per box)</span>`)).join('') || '<span class="muted">No unique parts</span>'}</div>`;
-  h += `<h2>Step 2: shared parts - count into piles</h2>${legend(vs)}<div class="card">` +
-    p.shared.map((r) => chk(`shared|${r.key}`, r.item, totalCells(r))).join('') + '</div>';
+    h += setTitle(v) + card(p.piles[v.key].map((r) => chk(`${v.key}|${r.key}`, r.item, qty(total(r, v)) + mutedInline(`(${r.qty[v.key]} per box)`))).join('') || mutedInline('No unique parts'));
+  h += heading(2, 'Step 2: shared parts - count into piles') + legend(vs) + card(p.shared.map((r) => chk(`shared|${r.key}`, r.item, totalCells(r))).join(''));
   const ex = vs.filter((v) => v.extras.length);
-  if (ex.length) h += `<h2>Optional spares (extras)</h2>` + ex.map((v) => `<h3>${count(v)} &times; ${esc(vLabel(v))}</h3><div class="card">${v.extras.map((i) => partHtml(i, `<span class="qty">${i.qty * count(v)}</span>`)).join('')}</div>`).join('');
+  if (ex.length) h += heading(2, 'Optional spares (extras)') + ex.map((v) => setTitle(v) + card(v.extras.map((i) => partHtml(i, qty(i.qty * count(v)))).join(''))).join('');
   return h;
 }
 
@@ -167,10 +163,10 @@ const TABS = { identify: 'Identify', common: 'Common parts', separate: 'Separate
 
 function render() {
   const body = state.tab === 'identify' ? renderIdentify() : state.tab === 'common' ? renderCommon() : renderSeparate();
-  document.getElementById('app')!.innerHTML = `<h1>LEGO Serious Play set identifier</h1>
-    <nav>${(Object.keys(TABS) as (keyof typeof TABS)[]).map((t) => `<button data-tab="${t}" class="${t === state.tab ? 'active' : ''}">${TABS[t]}</button>`).join('')}</nav>${body}
-    ${sets.some((s) => s.noInventory) ? `<p class="muted">Known sets without a BrickLink inventory (cannot be identified): ${sets.filter((s) => s.noInventory).map((s) => `<a href="${s.sourceUrl}">${esc(s.setNo + ' ' + s.name)}</a>`).join('; ')}</p>` : ''}
-    <p class="muted">Data from BrickLink inventories. Images hotlinked from BrickLink.</p>`;
+  const noInv = sets.filter((s) => s.noInventory);
+  document.getElementById('app')!.innerHTML = page(heading(1, 'LEGO Serious Play set identifier') + tabs(TABS, state.tab) + body +
+    (noInv.length ? paragraph(`Known sets without a BrickLink inventory (cannot be identified): ${noInv.map((s) => link(s.sourceUrl, esc(s.setNo + ' ' + s.name))).join('; ')}`, { muted: true }) : '') +
+    paragraph('Data from BrickLink inventories. Images hotlinked from BrickLink.', { muted: true }));
 }
 
 document.addEventListener('click', (e) => {

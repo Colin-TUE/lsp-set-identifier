@@ -1,0 +1,54 @@
+/* Design tokens: the single source of truth for colors, type, spacing, radii. */
+:root {
+  /* Colors: neutral */
+  --ui-color-text: #222;
+  --ui-color-text-muted: #777;
+  --ui-color-text-inverse: #fff;
+  --ui-color-bg-page: #f5f5f7;
+  --ui-color-bg-surface: #fff;
+  --ui-color-bg-inverse: #222;
+  --ui-color-border: #ddd;
+  --ui-color-border-strong: #bbb;
+  --ui-color-border-choice: #ccc;
+  --ui-color-border-subtle: #eee;
+  --ui-color-border-hover: #222;
+  /* Colors: status */
+  --ui-color-warning: #b60;
+  --ui-color-success: #2a7;
+
+  /* Typography */
+  --ui-font-family: system-ui, sans-serif;
+  --ui-font-size-xs: .8rem;
+  --ui-font-size-sm: .85rem;
+  --ui-font-size-md: 1rem;
+  --ui-font-size-lg: 1.1rem;
+  --ui-font-size-xl: 1.3rem;
+  --ui-font-weight-semibold: 600;
+  --ui-font-weight-bold: 700;
+
+  /* Spacing scale */
+  --ui-space-1: .2rem;
+  --ui-space-2: .3rem;
+  --ui-space-3: .4rem;
+  --ui-space-4: .5rem;
+  --ui-space-5: .6rem;
+  --ui-space-6: .8rem;
+  --ui-space-7: .9rem;
+  --ui-space-8: 1rem;
+  --ui-space-9: 1.5rem;
+
+  /* Shape */
+  --ui-radius-sm: 6px;
+  --ui-radius-md: 8px;
+  --ui-border-width: 1px;
+  --ui-border-width-thick: 2px;
+
+  /* Layout & sizes */
+  --ui-page-max-width: 960px;
+  --ui-choice-min-width: 220px;
+  --ui-thumb-width: 56px;
+  --ui-thumb-height: 42px;
+  --ui-qty-min-width: 2.5rem;
+  --ui-input-width-sm: 4.5rem;
+  --ui-input-width-md: 7rem;
+}
