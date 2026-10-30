@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const PRODUCT = '2000414'; // two versions that differ by one part
+const PRODUCT = '2000414'; // five versions across three BrickLink variants
 
 const candidates = (page: Page) => page.locator('.ui-badge', { hasText: /\d+ candidates?/ });
 const count = async (page: Page) => Number((await candidates(page).textContent())!.match(/\d+/)![0]);
@@ -95,3 +95,180 @@ test('workshop and ticks survive a reload; sort tab shows piles', async ({ page 
 async function firstOption(page: Page) {
   return (await page.locator('#parts option').first().getAttribute('value'))!;
 }
+
+const ORIG = '2000414-4/orig';
+const UPDATED = '2000414-4/Oct 17, 2026';
+
+/** Start with two different versions already in the workshop (as if saved from an earlier visit). */
+async function withWorkshop(page: Page, mixed: string[] = []) {
+  await page.addInitScript(
+    ([ws, mx]) => {
+      localStorage.setItem('lsp-workshop', ws);
+      localStorage.setItem('lsp-mixed', mx);
+    },
+    [JSON.stringify({ [ORIG]: 1, [UPDATED]: 1 }), JSON.stringify(mixed)],
+  );
+  await page.goto('/');
+}
+
+test.describe('print', () => {
+  test('Print opens the print dialog once and keeps ticks', async ({ page }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as { __prints: number };
+      w.__prints = 0;
+      window.print = () => void w.__prints++;
+    });
+    await withWorkshop(page);
+    await page.locator('[data-tab="separate"]').first().click();
+    await page.locator('[data-chk]').first().check();
+    await page.locator('#print').click();
+    expect(await page.evaluate(() => (window as unknown as { __prints: number }).__prints)).toBe(1);
+    await expect(page.locator('[data-chk]').first()).toBeChecked();
+  });
+});
+
+test.describe('picker dialog', () => {
+  const dialog = (page: Page) => page.locator('#pickerDlg');
+
+  test('opens, adds and removes boxes, and closes with Done', async ({ page }) => {
+    await page.locator('#openPicker').click();
+    await expect(dialog(page)).toBeVisible();
+    await expect(dialog(page).getByText('0 boxes in workshop')).toBeVisible();
+
+    await dialog(page).locator(`[data-add="${ORIG}"]`).click();
+    await expect(dialog(page)).toBeVisible(); // still open after the re-render
+    await dialog(page).locator(`[data-add="${ORIG}"]`).click();
+    await expect(dialog(page).getByText('2 boxes in workshop')).toBeVisible();
+    await dialog(page).locator(`[data-dec="${ORIG}"]`).click();
+    await expect(dialog(page).getByText('1 box in workshop')).toBeVisible();
+    await dialog(page).locator(`[data-dec="${ORIG}"]`).click();
+    await expect(dialog(page).getByText('0 boxes in workshop')).toBeVisible();
+
+    await dialog(page).locator(`[data-add="${ORIG}"]`).click();
+    await page.locator('#closePicker').click();
+    await expect(dialog(page)).toBeHidden();
+    await expect(page.locator('.ui-badge', { hasText: '1 box' })).toBeVisible();
+  });
+
+  test('closes with Escape and stays closed after the next re-render', async ({ page }) => {
+    await page.locator('#openPicker').click();
+    await expect(dialog(page)).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(dialog(page)).toBeHidden();
+    await page.locator('#setFilter').selectOption(PRODUCT); // triggers a re-render
+    await expect(dialog(page)).toBeHidden();
+  });
+
+  test('closes when clicking the backdrop but not the content', async ({ page }) => {
+    await page.locator('#openPicker').click();
+    await dialog(page)
+      .locator('.ui-dialog__body')
+      .click({ position: { x: 5, y: 5 } });
+    await expect(dialog(page)).toBeVisible();
+    const box = (await dialog(page).boundingBox())!;
+    await page.mouse.click(box.x - 10, box.y - 10);
+    await expect(dialog(page)).toBeHidden();
+  });
+
+  test('workshop panel steppers change the count and remove the row at zero', async ({ page }) => {
+    await withWorkshop(page);
+    const panel = page.locator('.ui-layout__aside');
+    await panel.locator(`[data-add="${ORIG}"]`).click();
+    await expect(page.locator('.ui-badge', { hasText: '3 boxes' })).toBeVisible();
+    await panel.locator(`[data-dec="${ORIG}"]`).click();
+    await panel.locator(`[data-dec="${ORIG}"]`).click();
+    await expect(panel.locator(`[data-add="${ORIG}"]`)).toHaveCount(0);
+    await expect(page.locator('.ui-badge', { hasText: '1 box' })).toBeVisible();
+  });
+});
+
+test.describe('sorting', () => {
+  test('shows an empty state without boxes and a hint with a single version', async ({ page }) => {
+    await page.locator('[data-tab="separate"]').first().click();
+    await expect(page.getByText('Add the boxes used in your workshop first.')).toBeVisible();
+    await page.locator('[data-tab="identify"]').first().click();
+    await expect(page.getByRole('heading', { name: 'Identify a box' })).toBeVisible();
+  });
+
+  test('same version only: nothing to sort', async ({ page }) => {
+    await page.addInitScript((ws) => localStorage.setItem('lsp-workshop', ws), JSON.stringify({ [ORIG]: 2 }));
+    await page.goto('/');
+    await page.locator('[data-tab="separate"]').first().click();
+    await expect(page.getByText('All boxes are the same version')).toBeVisible();
+  });
+
+  test('"Skip sorting" moves a version into a mixed pile and "Sort out" brings it back', async ({ page }) => {
+    await withWorkshop(page);
+    await page.locator('[data-tab="separate"]').first().click();
+    await expect(page.getByText('Kept mixed')).toHaveCount(0);
+
+    await page.locator(`[data-mix="${UPDATED}"]`).first().click();
+    await expect(page.getByRole('heading', { name: /Kept mixed \(1 boxes\)/ })).toBeVisible();
+
+    await page.locator(`[data-mix="${UPDATED}"]`).first().click();
+    await expect(page.getByText('Kept mixed')).toHaveCount(0);
+  });
+
+  test('everything kept mixed leaves nothing to sort', async ({ page }) => {
+    await withWorkshop(page, [ORIG, UPDATED]);
+    await page.locator('[data-tab="separate"]').first().click();
+    await expect(page.getByText('Everything is kept mixed')).toBeVisible();
+    await page.locator(`[data-mix="${ORIG}"]`).first().click();
+    await expect(page.getByText('Everything is kept mixed')).toHaveCount(0);
+  });
+
+  test('the progress counter follows the ticks', async ({ page }) => {
+    await withWorkshop(page);
+    await page.locator('[data-tab="separate"]').first().click();
+    await expect(page.getByText(/^0 of \d+ parts sorted$/)).toBeVisible();
+    await page.locator('[data-chk]').first().check();
+    await expect(page.getByText(/^1 of \d+ parts sorted$/)).toBeVisible();
+  });
+});
+
+test.describe('identify details', () => {
+  test('"Not sure, skip" hides that question, then no more can be asked', async ({ page }) => {
+    await page.locator('#setFilter').selectOption(PRODUCT);
+    const skip = page.locator('[data-ans="skip"]');
+    for (let i = 0; i < 20 && (await skip.count()); i++) await skip.click();
+    await expect(page.getByText('No more questions can tell the remaining versions apart')).toBeVisible();
+    await expect(page.locator('#resetAns')).toBeVisible();
+    await page.locator('#resetAns').click();
+    await expect(page.locator('[data-ans="skip"]')).toBeVisible();
+  });
+
+  test('parts that no version has together show a notice and can be removed', async ({ page }) => {
+    await page.locator('#setFilter').selectOption(PRODUCT);
+    const options = await page.locator('#parts option').evaluateAll((os) => os.map((o) => o.getAttribute('value')!));
+    // Trans-Neon Green is only in the original, Trans-Light Blue only in the 2026 update.
+    const pair = options.filter((o) => /^3957b \| Trans-(Neon Green|Light Blue) \|/.test(o));
+    expect(pair).toHaveLength(2);
+    for (const value of pair) {
+      await page.locator('#partIn').fill(value);
+      await page.locator('#addObs').click();
+    }
+    await expect(page.getByText('No version contains all these parts')).toBeVisible();
+    await page.locator('[data-rm]').first().click();
+    await expect(page.getByText('No version contains all these parts')).toHaveCount(0);
+    await expect(page.locator('[data-rm]')).toHaveCount(1);
+  });
+
+  test('a looked-up part with a quantity ranks the versions and shows scores', async ({ page }) => {
+    await page.locator('#setFilter').selectOption(PRODUCT);
+    const options = await page.locator('#parts option').evaluateAll((os) => os.map((o) => o.getAttribute('value')!));
+    await page.locator('#partIn').fill(options.find((o) => o.startsWith('3957b | Black |'))!);
+    await page.locator('#qtyIn').fill('1');
+    await page.locator('#addObs').click();
+    await expect(page.locator('[data-rm]')).toHaveCount(1);
+    await page.locator('summary', { hasText: 'Possible versions' }).click();
+    await expect(page.locator('.ui-list-row', { hasText: /score -?\d/ }).first()).toBeVisible();
+  });
+
+  test('the "Add to workshop" button on the details list adds without resetting', async ({ page }) => {
+    await page.locator('#setFilter').selectOption(PRODUCT);
+    await page.locator('details', { hasText: 'Possible versions' }).first().locator('summary').first().click();
+    await page.locator(`[data-add="${ORIG}"]`).first().click();
+    await expect(page.locator('.ui-badge', { hasText: '1 box' })).toBeVisible();
+    await expect(page.locator('#setFilter')).toHaveValue(PRODUCT);
+  });
+});
