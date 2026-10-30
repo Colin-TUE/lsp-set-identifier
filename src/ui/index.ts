@@ -9,8 +9,8 @@ import './components.css';
 export type Html = string;
 export type Attrs = Record<string, string | number | boolean | undefined | null>;
 
-export const esc = (s: string): string =>
-  s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+const ENTITIES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as const;
+export const esc = (s: string): string => s.replace(/[&<>"]/g, (c) => ENTITIES[c as keyof typeof ENTITIES]);
 
 /** Serialise attributes; false/undefined/null are skipped, true renders a bare attribute. */
 export function attrs(a: Attrs = {}): string {

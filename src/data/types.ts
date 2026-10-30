@@ -63,3 +63,9 @@ export const imgUrl = (i: Pick<Item, 'type' | 'partId' | 'colorId'>) =>
     : i.type === 'G'
       ? `https://img.bricklink.com/G/${i.partId}.jpg`
       : `https://img.bricklink.com/M/${i.partId}.jpg`;
+
+/** Value that must exist; fails loudly instead of using a non-null assertion. */
+export function must<T>(v: T | null | undefined, what = 'value'): T {
+  if (v === null || v === undefined) throw new Error(`${what} is missing`);
+  return v;
+}

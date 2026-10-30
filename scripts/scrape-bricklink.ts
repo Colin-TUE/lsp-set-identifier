@@ -7,7 +7,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseChangelog, parseInventory } from './parse';
 import { versionOverrides, extraVersions, mergeDates } from '../src/data/versions';
 import { defaultDefs, effectiveChanges, mergeChanges } from '../src/logic/versions';
-import type { SetInventory } from '../src/data/types';
+import { must, type SetInventory } from '../src/data/types';
 
 const refresh = process.argv.includes('--refresh');
 const cacheDir = 'scripts/cache';
@@ -64,7 +64,7 @@ for (const line of lines) {
     local = true;
     html = readFileSync(path, 'latin1');
   } else {
-    setNo = new URL(line).searchParams.get('S')!;
+    setNo = must(new URL(line).searchParams.get('S'), `S parameter in ${line}`);
     src = line;
     const cache = `${cacheDir}/${setNo}.html`;
     if (!refresh && existsSync(cache)) html = readFileSync(cache, 'latin1');
@@ -92,7 +92,9 @@ for (const line of lines) {
   if (!versionOverrides[setNo]) {
     const ch = mergeChanges(effectiveChanges(inv), mergeDates[setNo] ?? []);
     for (let k = 1; k < ch.length; k++) {
-      const gap = (Date.parse(ch[k].date.split(' + ').pop()!) - Date.parse(ch[k - 1].date.split(' + ')[0])) / 86400000;
+      const gap =
+        (Date.parse(ch[k].date.split(' + ').at(-1) ?? ch[k].date) - Date.parse(ch[k - 1].date.split(' + ')[0])) /
+        86400000;
       if (gap <= 183)
         console.warn(
           `  WARN ${setNo}: "${ch[k - 1].date}" and "${ch[k].date}" are ${Math.round(gap)} days apart - same production run? Merge via mergeDates in src/data/versions.ts`,

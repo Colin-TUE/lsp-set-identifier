@@ -60,11 +60,9 @@ export interface Question {
   bSet: string[];
 }
 
-/** Next best question to split the candidates, or null if indistinguishable. */
-export function nextQuestion(candidates: ResolvedVersion[], skipped: Set<string> = new Set()): Question | null {
-  if (candidates.length < 2) return null;
-  const all = candidates.map((c) => c.key);
-  const groups = new Map<string, string[]>(); // signature -> part keys
+/** Part keys grouped by the set of candidates containing them (signature "k1|k2|..."), skipping parts every candidate has. */
+function groupBySignature(candidates: ResolvedVersion[]): Map<string, string[]> {
+  const groups = new Map<string, string[]>();
   const keys = new Set(candidates.flatMap((c) => c.parts.map(itemKey)));
   for (const k of keys) {
     const sig = candidates.filter((c) => c.parts.some((p) => itemKey(p) === k)).map((c) => c.key);
@@ -72,21 +70,33 @@ export function nextQuestion(candidates: ResolvedVersion[], skipped: Set<string>
     const s = sig.join('|');
     groups.set(s, [...(groups.get(s) ?? []), k]);
   }
-  let best: { sig: string; score: number } | null = null;
-  for (const sig of groups.keys()) {
+  return groups;
+}
+
+/** Prefer balanced splits, a clean A/B pair, and few differing elements (easier for a user to check). */
+function splitScore(sig: string, keys: string[], groups: Map<string, string[]>, all: string[]): number {
+  const inSig = sig.split('|');
+  const comp = all.filter((x) => !inSig.includes(x)).join('|');
+  const balance = Math.min(inSig.length, all.length - inSig.length) / all.length;
+  const size = keys.length + (groups.get(comp)?.length ?? 0);
+  return balance + (groups.has(comp) ? 0.25 : 0) - 0.3 * Math.min(1, Math.log10(size) / 2);
+}
+
+/** Next best question to split the candidates, or null if indistinguishable. */
+export function nextQuestion(candidates: ResolvedVersion[], skipped: Set<string> = new Set()): Question | null {
+  if (candidates.length < 2) return null;
+  const all = candidates.map((c) => c.key);
+  const groups = groupBySignature(candidates);
+  let best: { sig: string; keys: string[]; score: number } | null = null;
+  for (const [sig, keys] of groups) {
     if (skipped.has(sig)) continue;
-    const n = sig.split('|').length;
-    const comp = all.filter((x) => !sig.split('|').includes(x)).join('|');
-    const balance = Math.min(n, all.length - n) / all.length;
-    // Prefer balanced splits, a clean A/B pair, and few differing elements (easier for a user to check).
-    const size = groups.get(sig)!.length + (groups.get(comp)?.length ?? 0);
-    const score = balance + (groups.has(comp) ? 0.25 : 0) - 0.3 * Math.min(1, Math.log10(size) / 2);
-    if (!best || score > best.score) best = { sig, score };
+    const score = splitScore(sig, keys, groups, all);
+    if (!best || score > best.score) best = { sig, keys, score };
   }
   if (!best) return null;
   const aSet = best.sig.split('|');
   const bSet = all.filter((x) => !aSet.includes(x));
-  return { a: groups.get(best.sig)!, aSet, b: groups.get(bSet.join('|')) ?? [], bSet };
+  return { a: best.keys, aSet, b: groups.get(bSet.join('|')) ?? [], bSet };
 }
 
 export const questionId = (q: Question) => q.aSet.join('|');
@@ -109,7 +119,10 @@ export function compare(vs: ResolvedVersion[]): CommonResult {
   const rows: PartRow[] = [];
   for (const [key, item] of idx) {
     const qty: Record<string, number> = {};
-    for (const [vk, m] of maps) if (m.has(key)) qty[vk] = m.get(key)!;
+    for (const [vk, m] of maps) {
+      const q = m.get(key);
+      if (q !== undefined) qty[vk] = q;
+    }
     if (Object.keys(qty).length) rows.push({ key, item, qty });
   }
   const n = vs.length;
@@ -152,8 +165,13 @@ export function distinguish(v: ResolvedVersion, others: ResolvedVersion[]): Diff
   const os = others.map(keyset);
   if (!os.length) return { onlyHere: [], lacks: [] };
   let onlyHere = v.parts.filter((p) => os.every((o) => !o.has(itemKey(p))));
-  const common = new Set([...os[0]].filter((k) => os.every((o) => o.has(k))));
-  let lacks = [...common].filter((k) => !mine.has(k)).map((k) => others[0].parts.find((p) => itemKey(p) === k)!);
+  const seen = new Set<string>();
+  let lacks = others[0].parts.filter((p) => {
+    const k = itemKey(p);
+    if (mine.has(k) || seen.has(k) || !os.every((o) => o.has(k))) return false;
+    seen.add(k);
+    return true;
+  });
   if (!onlyHere.length && !lacks.length) {
     onlyHere = v.parts.filter((p) => os.some((o) => !o.has(itemKey(p))));
     const all = new Map(others.flatMap((o) => o.parts).map((p) => [itemKey(p), p]));

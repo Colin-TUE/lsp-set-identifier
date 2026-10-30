@@ -3,7 +3,7 @@ import { expect, test } from 'vitest';
 import { sets } from '../src/data/sets.generated';
 import { extraVersions, mergeDates, versionOverrides } from '../src/data/versions';
 import { defaultDefs, effectiveChanges, mergeChanges, resolveAll } from '../src/logic/versions';
-import { itemKey } from '../src/data/types';
+import { itemKey, must } from '../src/data/types';
 
 const withInv = sets.filter((s) => !s.noInventory);
 const resolved = resolveAll(sets, versionOverrides, extraVersions, mergeDates);
@@ -101,4 +101,11 @@ test('pending versions differ from the version they build on', () => {
       `${v.key} equals another version`,
     ).toBe(false);
   }
+});
+
+test('must returns present values (including falsy ones) and throws for null/undefined', () => {
+  expect(must(0)).toBe(0);
+  expect(must('')).toBe('');
+  expect(() => must(undefined, 'thing')).toThrow('thing is missing');
+  expect(() => must(null)).toThrow('value is missing');
 });

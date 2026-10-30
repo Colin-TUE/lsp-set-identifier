@@ -35,7 +35,7 @@ import {
 } from './ui';
 import { sets } from './data/sets.generated';
 import { versionOverrides, extraVersions, mergeDates } from './data/versions';
-import { imgUrl, itemKey, type Item, type ResolvedVersion } from './data/types';
+import { imgUrl, itemKey, must, type Item, type ResolvedVersion } from './data/types';
 import { resolveAll } from './logic/versions';
 import { candidatesFor, hasProgress, listProducts, resetIdentify as resetIdentifyState } from './logic/flow';
 import {
@@ -48,6 +48,7 @@ import {
   questionId,
   separate,
   type PartRow,
+  type SeparationPlan,
   type Question,
 } from './logic/analysis';
 
@@ -78,7 +79,8 @@ for (const k of Object.keys(state.workshop)) if (!byKey.has(k)) delete state.wor
 const count = (v: ResolvedVersion) => state.workshop[v.key] ?? 0;
 const inWorkshop = () => versions.filter((v) => count(v) > 0);
 const boxes = () => Object.values(state.workshop).reduce((a, n) => a + n, 0);
-const itemOf = (k: string) => index.get(k)!;
+const itemOf = (k: string) => must(index.get(k), `part ${k}`);
+const byId = <T extends HTMLElement>(id: string) => must(document.getElementById(id), `#${id}`) as T;
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 const invLink = (setNo: string) => {
   const url =
@@ -157,7 +159,7 @@ const addButton = (v: ResolvedVersion, primary = false) =>
     attrs: { 'data-add': v.key, 'data-next': primary || undefined },
   });
 
-function candidateDetails(r: ReturnType<typeof identify>[number], cands: ResolvedVersion[]): string {
+function candidateDetails(r: Ranked[number], cands: ResolvedVersion[]): string {
   const v = r.version;
   const others = cands.filter((c) => c !== v);
   const d = distinguish(v, others);
@@ -187,23 +189,20 @@ function candidateDetails(r: ReturnType<typeof identify>[number], cands: Resolve
   );
 }
 
-function renderIdentify(): string {
-  const cands = candidates();
-  const ranked = identify(cands, state.obs);
-  const progressed = hasProgress(state);
+type Ranked = ReturnType<typeof identify>;
 
-  // Box picker: which set is printed on the box narrows things down a lot.
+/** Product picker plus either the identified box or the next guided question. */
+function identifyBody(cands: ResolvedVersion[]): string {
+  // Box picker: which product is printed on the box narrows things down a lot.
   const setOptions = [
     { value: '', label: 'Any set / not sure', selected: false },
     ...products.map(([no, name]) => ({ value: no, label: `${no} ${name}`, selected: no === state.setFilter })),
   ];
-  const narrow = row(
+  let body = row(
     field('Product number on the box', select(setOptions, { id: 'setFilter' })) +
       spacer() +
-      (progressed ? button('Start over', { variant: 'ghost', attrs: { id: 'resetAns' } }) : ''),
+      (hasProgress(state) ? button('Start over', { variant: 'ghost', attrs: { id: 'resetAns' } }) : ''),
   );
-
-  let body = narrow;
   if (cands.length === 1) {
     currentQ = null;
     const v = cands[0];
@@ -226,12 +225,28 @@ function renderIdentify(): string {
       );
     }
   }
-  if (state.flash) body = notice(state.flash) + body;
+  return state.flash ? notice(state.flash) + body : body;
+}
 
+/** Optional lookup of specific parts the user spotted in the box. */
+function partLookup(cands: ResolvedVersion[]): string {
   const noFit =
     state.obs.length > 0 && !cands.every((v) => state.obs.every((o) => v.parts.some((p) => itemKey(p) === o.key)));
   const opts = [...index.values()].map((i) => `<option value="${esc(label(i))}"></option>`).join('');
-  const parts = section(
+  const found = state.obs.length
+    ? list(
+        state.obs
+          .map((o, n) =>
+            partHtml(
+              itemOf(o.key),
+              qty(o.qty ?? '') +
+                button('✕', { variant: 'ghost', size: 'icon', attrs: { 'data-rm': n, 'aria-label': 'Remove' } }),
+            ),
+          )
+          .join(''),
+      )
+    : '';
+  return section(
     'Look up specific parts',
     stack(
       row(
@@ -240,19 +255,7 @@ function renderIdentify(): string {
           numberInput({ id: 'qtyIn', min: 0, placeholder: 'Qty' }, 'sm') +
           button('Add part', { attrs: { id: 'addObs' } }),
       ) +
-        (state.obs.length
-          ? list(
-              state.obs
-                .map((o, n) =>
-                  partHtml(
-                    itemOf(o.key),
-                    qty(o.qty ?? '') +
-                      button('✕', { variant: 'ghost', size: 'icon', attrs: { 'data-rm': n, 'aria-label': 'Remove' } }),
-                  ),
-                )
-                .join(''),
-            )
-          : '') +
+        found +
         (noFit ? notice('No version contains all these parts, so the closest matches are shown.') : ''),
     ),
     {
@@ -262,31 +265,31 @@ function renderIdentify(): string {
         : mutedInline('Optional: spotted a distinctive piece? Add it to narrow the match.'),
     },
   );
+}
 
-  const results =
-    cands.length > 1
-      ? collapsible(
-          `<b>Possible versions</b>${badge(String(cands.length))}`,
-          list(
-            ranked
-              .map((r) =>
-                listRow(
-                  listRowMeta(
-                    `<b>${esc(vLabel(r.version))}</b>${state.obs.length ? ' ' + mutedInline(`score ${r.score}`) : ''}`,
-                  ) + addButton(r.version),
-                ),
-              )
-              .join(''),
-          ) +
-            ranked
-              .slice(0, 1)
-              .map((r) => collapsible(`<b>How is ${esc(r.version.name)} different?</b>`, candidateDetails(r, cands)))
-              .join(''),
-        )
-      : collapsible('<b>Details of this version</b>', candidateDetails(ranked[0], cands));
+/** Ranked list of the remaining candidates, or the details of the single remaining one. */
+function possibleVersions(cands: ResolvedVersion[], ranked: Ranked): string {
+  if (cands.length <= 1) return collapsible('<b>Details of this version</b>', candidateDetails(ranked[0], cands));
+  const rows = ranked.map((r) =>
+    listRow(
+      listRowMeta(`<b>${esc(vLabel(r.version))}</b>${state.obs.length ? ' ' + mutedInline(`score ${r.score}`) : ''}`) +
+        addButton(r.version),
+    ),
+  );
+  const top = collapsible(
+    `<b>How is ${esc(ranked[0].version.name)} different?</b>`,
+    candidateDetails(ranked[0], cands),
+  );
+  return collapsible(`<b>Possible versions</b>${badge(String(cands.length))}`, list(rows.join('')) + top);
+}
 
+function renderIdentify(): string {
+  const cands = candidates();
+  const ranked = identify(cands, state.obs);
   return layout(
-    section('Identify a box', body, { actions: badge(`${plural(cands.length, 'candidate')}`) }) + parts + results,
+    section('Identify a box', identifyBody(cands), { actions: badge(`${plural(cands.length, 'candidate')}`) }) +
+      partLookup(cands) +
+      possibleVersions(cands, ranked),
     workshopPanel(),
   );
 }
@@ -426,47 +429,34 @@ const mixedMembers = (vs: ResolvedVersion[]) =>
       .join(''),
   );
 
-function renderSeparate(): string {
-  const vs = inWorkshop();
-  const ps = piles(vs);
-  if (ps.length < 2)
-    return layout(
-      section(
-        'Sort after workshop',
-        empty(
-          !vs.length
-            ? 'Add the boxes used in your workshop first.'
-            : vs.length === 1
-              ? 'All boxes are the same version, so nothing needs sorting: just split the parts evenly.'
-              : 'Everything is kept mixed, so there is nothing to sort. Choose at least one version to sort out.',
-        ) +
-          (vs.length > 1
-            ? mixedMembers(vs)
-            : row(button('← Identify boxes', { variant: 'primary', attrs: { 'data-tab': 'identify' } }))),
-      ),
-      workshopPanel(),
-    );
+/** Shown when there are fewer than two piles: nothing to separate. */
+function nothingToSort(vs: ResolvedVersion[]): string {
+  const message = !vs.length
+    ? 'Add the boxes used in your workshop first.'
+    : vs.length === 1
+      ? 'All boxes are the same version, so nothing needs sorting: just split the parts evenly.'
+      : 'Everything is kept mixed, so there is nothing to sort. Choose at least one version to sort out.';
+  return layout(
+    section(
+      'Sort after workshop',
+      empty(message) +
+        (vs.length > 1
+          ? mixedMembers(vs)
+          : row(button('← Identify boxes', { variant: 'primary', attrs: { 'data-tab': 'identify' } }))),
+    ),
+    workshopPanel(),
+  );
+}
 
-  const pvs = ps.map((p) => p.v);
-  const p = separate(pvs);
-  const total = (r: PartRow, pile: Pile) => pileTotal(pile, r.qty[pile.v.key] ?? 0);
-  const chk = (id: string, i: Item, trailing: string) =>
-    partRow(i, { img: imgUrl(i), trailing, check: { checked: state.checked.has(id), attrs: { 'data-chk': id } } });
-
-  const ids = [
-    ...ps.flatMap((x) => p.piles[x.v.key].map((r) => `${x.v.key}|${r.key}`)),
-    ...p.shared.map((r) => `shared|${r.key}`),
-  ];
-  const done = ids.filter((id) => state.checked.has(id)).length;
-
-  const intro = section(
+const sortIntro = (done: number, total: number) =>
+  section(
     'Sort after workshop',
     paragraph(
       'First pull out the parts that only one pile has, then count the shared parts into the piles. Quantities are totals for the whole workshop. Tick parts off as you go.',
       { muted: true },
     ) +
-      row(mutedInline(`${done} of ${ids.length} parts sorted`) + spacer()) +
-      progress(done, ids.length) +
+      row(mutedInline(`${done} of ${total} parts sorted`) + spacer()) +
+      progress(done, total) +
       muted('Happy to keep some versions together? Use “Skip sorting” on them below and they go into one mixed pile.'),
     {
       actions:
@@ -475,15 +465,23 @@ function renderSeparate(): string {
     },
   );
 
-  const step1 = ps
+/** A part row with a "done" tick box. */
+const tickRow = (id: string, i: Item, trailing: string) =>
+  partRow(i, { img: imgUrl(i), trailing, check: { checked: state.checked.has(id), attrs: { 'data-chk': id } } });
+
+const total = (r: PartRow, pile: Pile) => pileTotal(pile, r.qty[pile.v.key] ?? 0);
+
+/** Step 1: per pile, the parts only that pile has. */
+const uniquePartsStep = (ps: Pile[], plan: SeparationPlan, vs: ResolvedVersion[]) =>
+  ps
     .map((x) =>
       section(
         esc(x.mixed ? `Kept mixed (${x.boxes} boxes)` : vLabel(x.v)),
         (x.mixed ? mixedMembers(vs) + heading(3, 'Parts only the mixed pile has') : '') +
           list(
-            p.piles[x.v.key]
+            plan.piles[x.v.key]
               .map((r) =>
-                chk(
+                tickRow(
                   `${x.v.key}|${r.key}`,
                   r.item,
                   (x.mixed ? '' : mutedInline(`${r.qty[x.v.key]}/box`)) + qty(total(r, x)),
@@ -496,15 +494,17 @@ function renderSeparate(): string {
     )
     .join('');
 
+/** Step 2: parts several piles share, counted into each pile. */
+function sharedPartsStep(ps: Pile[], plan: SeparationPlan): string {
   const labels = ps.map(pileLabel);
-  const step2 = section(
+  return section(
     `Step 2 · Shared parts: count into piles`,
     legend(labels) +
       list(
         colHead(ps, (n) => labels[n]) +
-          p.shared
+          plan.shared
             .map((r) =>
-              chk(
+              tickRow(
                 `shared|${r.key}`,
                 r.item,
                 ps.map((x, n) => qty(r.qty[x.v.key] ? total(r, x) : '–', { title: labels[n] })).join(''),
@@ -512,25 +512,27 @@ function renderSeparate(): string {
             )
             .join(''),
       ),
-    { actions: badge(String(p.shared.length)) },
+    { actions: badge(String(plan.shared.length)) },
   );
+}
 
-  const ex = ps.filter((x) => x.v.extras.length);
-  const extras = ex.length
-    ? collapsible(
-        '<b>Optional spares (extras)</b>',
-        ex
-          .map((x) =>
-            stack(
-              heading(3, esc(pileLabel(x))) +
-                list(x.v.extras.map((i) => partHtml(i, qty(pileTotal(x, i.qty)))).join('')),
-              { gap: 'sm' },
-            ),
-          )
-          .join(''),
+function sparesSection(ps: Pile[]): string {
+  const withExtras = ps.filter((x) => x.v.extras.length);
+  if (!withExtras.length) return '';
+  return collapsible(
+    '<b>Optional spares (extras)</b>',
+    withExtras
+      .map((x) =>
+        stack(
+          heading(3, esc(pileLabel(x))) + list(x.v.extras.map((i) => partHtml(i, qty(pileTotal(x, i.qty)))).join('')),
+          { gap: 'sm' },
+        ),
       )
-    : '';
+      .join(''),
+  );
+}
 
+function comparisonSection(vs: ResolvedVersion[]): string {
   const c = compare(vs);
   const cmp = (t: string, rows: PartRow[]) =>
     stack(
@@ -548,7 +550,7 @@ function renderSeparate(): string {
         ),
       { gap: 'sm' },
     );
-  const comparison = collapsible(
+  return collapsible(
     '<b>Compare versions (per box)</b>',
     legend(vs.map(vLabel)) +
       cmp('In all versions', c.all) +
@@ -556,9 +558,26 @@ function renderSeparate(): string {
       cmp('Only in one version', c.unique),
     { noPrint: true },
   );
+}
 
+function renderSeparate(): string {
+  const vs = inWorkshop();
+  const ps = piles(vs);
+  if (ps.length < 2) return nothingToSort(vs);
+
+  const plan = separate(ps.map((p) => p.v));
+  const ids = [
+    ...ps.flatMap((x) => plan.piles[x.v.key].map((r) => `${x.v.key}|${r.key}`)),
+    ...plan.shared.map((r) => `shared|${r.key}`),
+  ];
+  const done = ids.filter((id) => state.checked.has(id)).length;
   return layout(
-    intro + heading(2, 'Step 1 · Parts unique to one pile') + step1 + step2 + extras + comparison,
+    sortIntro(done, ids.length) +
+      heading(2, 'Step 1 · Parts unique to one pile') +
+      uniquePartsStep(ps, plan, vs) +
+      sharedPartsStep(ps, plan) +
+      sparesSection(ps) +
+      comparisonSection(vs),
     workshopPanel(),
   );
 }
@@ -575,7 +594,7 @@ function render() {
   const body = state.tab === 'identify' ? renderIdentify() : renderSeparate();
   state.flash = '';
   const noInv = sets.filter((s) => s.noInventory);
-  document.getElementById('app')!.innerHTML = shell({
+  byId('app').innerHTML = shell({
     header: header('LEGO Serious Play set identifier', tabs(TABS, state.tab)),
     main: body + pickerDialog(),
     footer: footer(
@@ -587,7 +606,7 @@ function render() {
         : '') + paragraph('Data from BrickLink inventories. Images hotlinked from BrickLink.', { muted: true }),
     ),
   });
-  const dlg = document.getElementById('pickerDlg') as HTMLDialogElement;
+  const dlg = byId<HTMLDialogElement>('pickerDlg');
   // Only a close of the live dialog counts (not the old one being replaced by a re-render).
   dlg.addEventListener('close', () => {
     if (dlg.isConnected) state.picker = false;
@@ -596,41 +615,48 @@ function render() {
   dlg.addEventListener('click', (e) => e.target === dlg && dlg.close());
   if (state.picker) {
     dlg.showModal();
-    dlg.querySelector('.ui-dialog__body')!.scrollTop = prevScroll;
+    must(dlg.querySelector('.ui-dialog__body'), 'dialog body').scrollTop = prevScroll;
   }
 }
 
-document.addEventListener('click', (e) => {
-  const t = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null;
-  if (!t) return;
+/** What a click did: re-render, nothing to redraw, or not ours. */
+type Outcome = 'render' | 'none' | null;
+
+function workshopClick(t: HTMLButtonElement): Outcome {
   const d = t.dataset;
   if (d.add) {
     state.workshop[d.add] = (state.workshop[d.add] ?? 0) + 1;
     saveWorkshop();
     // After adding the identified box, get ready for the next one.
     if (d.next !== undefined) {
-      state.flash = `Added ${esc(vLabel(byKey.get(d.add)!))}. Ready for the next box.`;
+      state.flash = `Added ${esc(vLabel(must(byKey.get(d.add), `version ${d.add}`)))}. Ready for the next box.`;
       resetIdentify();
     }
-  } else if (t.id === 'openPicker') state.picker = true;
-  else if (t.id === 'closePicker') state.picker = false;
-  else if (d.mix) {
-    if (state.mixed.has(d.mix)) state.mixed.delete(d.mix);
-    else state.mixed.add(d.mix);
-    localStorage.setItem('lsp-mixed', JSON.stringify([...state.mixed]));
   } else if (d.dec) {
     const n = (state.workshop[d.dec] ?? 0) - 1;
     if (n > 0) state.workshop[d.dec] = n;
     else delete state.workshop[d.dec];
     saveWorkshop();
-  } else if (d.tab) {
-    state.tab = d.tab as Tab;
-    window.scrollTo(0, 0);
-  } else if (t.id === 'addObs') {
-    const v = (document.getElementById('partIn') as HTMLInputElement).value.trim();
-    const q = (document.getElementById('qtyIn') as HTMLInputElement).value;
+  } else if (d.mix) {
+    if (state.mixed.has(d.mix)) state.mixed.delete(d.mix);
+    else state.mixed.add(d.mix);
+    localStorage.setItem('lsp-mixed', JSON.stringify([...state.mixed]));
+  } else if (t.id === 'openPicker') state.picker = true;
+  else if (t.id === 'closePicker') state.picker = false;
+  else return null;
+  return 'render';
+}
+
+function identifyClick(t: HTMLButtonElement): Outcome {
+  const d = t.dataset;
+  if (t.id === 'addObs') {
+    const v = byId<HTMLInputElement>('partIn').value.trim();
+    const q = byId<HTMLInputElement>('qtyIn').value;
     const hit = [...index.entries()].find(([, i]) => label(i) === v);
-    if (!hit) return alert('Pick a part from the suggestion list.');
+    if (!hit) {
+      alert('Pick a part from the suggestion list.');
+      return 'none';
+    }
     state.obs.push({ key: hit[0], qty: q === '' ? undefined : Number(q) });
   } else if (d.rm) state.obs.splice(Number(d.rm), 1);
   else if (d.ans && currentQ) {
@@ -640,13 +666,30 @@ document.addEventListener('click', (e) => {
   } else if (t.id === 'resetAns')
     resetIdentify(true); // keep the looked-up parts
   else if (t.id === 'nextBox') resetIdentify();
-  else if (t.id === 'clearChk') {
-    if (!confirm('Clear all ticks?')) return;
+  else return null;
+  return 'render';
+}
+
+function pageClick(t: HTMLButtonElement): Outcome {
+  if (t.dataset.tab) {
+    state.tab = t.dataset.tab as Tab;
+    window.scrollTo(0, 0);
+  } else if (t.id === 'clearChk') {
+    if (!confirm('Clear all ticks?')) return 'none';
     state.checked.clear();
     saveChecked();
-  } else if (t.id === 'print') return window.print();
-  else return;
-  render();
+  } else if (t.id === 'print') {
+    window.print();
+    return 'none';
+  } else return null;
+  return 'render';
+}
+
+document.addEventListener('click', (e) => {
+  const t = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null;
+  if (!t) return;
+  const outcome = workshopClick(t) ?? identifyClick(t) ?? pageClick(t);
+  if (outcome === 'render') render();
 });
 
 document.addEventListener('change', (e) => {
