@@ -100,13 +100,17 @@ const ORIG = '2000414-4/orig';
 const UPDATED = '2000414-4/Oct 17, 2026';
 
 /** Start with two different versions already in the workshop (as if saved from an earlier visit). */
-async function withWorkshop(page: Page, mixed: string[] = []) {
+async function withWorkshop(
+  page: Page,
+  mixed: string[] = [],
+  boxes: Record<string, number> = { [ORIG]: 1, [UPDATED]: 1 },
+) {
   await page.addInitScript(
     ([ws, mx]) => {
       localStorage.setItem('lsp-workshop', ws);
       localStorage.setItem('lsp-mixed', mx);
     },
-    [JSON.stringify({ [ORIG]: 1, [UPDATED]: 1 }), JSON.stringify(mixed)],
+    [JSON.stringify(boxes), JSON.stringify(mixed)],
   );
   await page.goto('/');
 }
@@ -215,6 +219,55 @@ test.describe('sorting', () => {
     await expect(page.getByText('Everything is kept mixed')).toBeVisible();
     await page.locator(`[data-mix="${ORIG}"]`).first().click();
     await expect(page.getByText('Everything is kept mixed')).toHaveCount(0);
+  });
+
+  test('with three sets (one with several copies) every kept-mixed version can be sorted out again', async ({
+    page,
+  }) => {
+    const A = '2000414-4/orig'; // 1 box
+    const B = '2000430-2/orig'; // 3 boxes
+    const C = '2000431-1/orig'; // 1 box
+    await withWorkshop(page, [], { [A]: 1, [B]: 3, [C]: 1 });
+    await page.locator('[data-tab="separate"]').first().click();
+    const toggle = (k: string) => page.locator(`[data-mix="${k}"]`);
+    const sortOutButtons = () => page.getByRole('button', { name: 'Sort out' });
+
+    // Skip sorting on all three, one after the other: each one moves to the mixed pile and keeps a "Sort out" button.
+    await toggle(A).first().click();
+    await expect(page.getByRole('heading', { name: 'Kept mixed (1 boxes)' })).toBeVisible();
+    await toggle(B).first().click();
+    await expect(page.getByRole('heading', { name: 'Kept mixed (4 boxes)' })).toBeVisible();
+    await expect(sortOutButtons()).toHaveCount(2);
+    await toggle(C).first().click();
+    await expect(page.getByText('Everything is kept mixed')).toBeVisible();
+    await expect(sortOutButtons()).toHaveCount(3);
+
+    // Sort one out: the other two stay in the mixed pile, both with a working "Sort out" button.
+    await toggle(B).first().click();
+    await expect(page.getByRole('heading', { name: 'Kept mixed (2 boxes)' })).toBeVisible();
+    await expect(sortOutButtons()).toHaveCount(2);
+    await expect(toggle(A)).toHaveText('Sort out');
+    await expect(toggle(C)).toHaveText('Sort out');
+
+    // Sort out a second one: the last one stays in the mixed pile and can still be sorted out.
+    await toggle(A).first().click();
+    await expect(page.getByRole('heading', { name: 'Kept mixed (1 boxes)' })).toBeVisible();
+    await expect(sortOutButtons()).toHaveCount(1);
+    await expect(toggle(C)).toHaveText('Sort out');
+
+    // Sorting out the last one leaves no mixed pile and every version has "Skip sorting" again.
+    await toggle(C).first().click();
+    await expect(page.getByText('Kept mixed')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Skip sorting' })).toHaveCount(3);
+  });
+
+  test('a multi-copy version kept mixed shows its box count in the mixed pile', async ({ page }) => {
+    const A = '2000414-4/orig';
+    const B = '2000430-2/orig';
+    await withWorkshop(page, [B], { [A]: 1, [B]: 3 });
+    await page.locator('[data-tab="separate"]').first().click();
+    await expect(page.getByRole('heading', { name: 'Kept mixed (3 boxes)' })).toBeVisible();
+    await expect(page.locator('.ui-list-row', { hasText: '3 ×' })).toBeVisible();
   });
 
   test('the progress counter follows the ticks', async ({ page }) => {
