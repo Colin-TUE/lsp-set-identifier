@@ -12,8 +12,7 @@ const ENTITIES: Record<string, string> = {
 };
 
 // Single pass so decoded output is never re-decoded (avoids double-unescaping).
-const decode = (s: string) =>
-  s.replace(/&(?:nbsp|amp|quot|lt|gt|#40|#41|#39);/g, (m) => ENTITIES[m]);
+const decode = (s: string) => s.replace(/&(?:nbsp|amp|quot|lt|gt|#40|#41|#39);/g, (m) => ENTITIES[m]);
 
 const SECTIONS: Record<string, Kind> = {
   'Regular Items:': 'regular',
