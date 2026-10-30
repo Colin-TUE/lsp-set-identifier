@@ -41,8 +41,8 @@ a {
 
 /* Header */
 .ui-header {
-  background: var(--ui-color-bg-surface);
-  border-bottom: var(--ui-border-width) solid var(--ui-color-border);
+  background: var(--ui-color-bg-chrome);
+  border-bottom: var(--ui-border-width) solid var(--ui-color-border-chrome);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -60,8 +60,8 @@ a {
 
 /* Footer */
 .ui-footer {
-  border-top: var(--ui-border-width) solid var(--ui-color-border);
-  background: var(--ui-color-bg-surface);
+  border-top: var(--ui-border-width) solid var(--ui-color-border-chrome);
+  background: var(--ui-color-bg-chrome);
   padding: var(--ui-space-4) 0;
 }
 .ui-footer .ui-page {

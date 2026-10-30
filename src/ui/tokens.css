@@ -1,20 +1,29 @@
 /* Design tokens: the single source of truth for colors, type, spacing, radii. */
 :root {
   /* Colors: neutral */
-  --ui-color-text: #1d1d1f;
-  --ui-color-text-muted: #6e6e73;
+  --ui-color-text: #2d3940;
+  --ui-color-text-muted: #666;
   --ui-color-text-inverse: #fff;
-  --ui-color-bg-page: #f5f5f7;
+  --ui-color-bg-page: #fff;
   --ui-color-bg-surface: #fff;
-  --ui-color-bg-subtle: #f0f0f2;
-  --ui-color-bg-inverse: #1d1d1f;
-  --ui-color-border: #e0e0e3;
-  --ui-color-border-strong: #c7c7cc;
-  --ui-color-border-subtle: #eeeef0;
-  --ui-color-border-hover: #1d1d1f;
-  --ui-color-accent: #d01012; /* LEGO red */
-  --ui-color-accent-hover: #a90d0f;
-  --ui-color-accent-subtle: #fdeceb;
+  --ui-color-bg-subtle: #f2f2f2;
+  --ui-color-bg-inverse: #2d3940;
+  --ui-color-border: #dcdcdc;
+  --ui-color-border-strong: #bdbdbd;
+  --ui-color-border-subtle: #ececec;
+  --ui-color-border-hover: #2d3940;
+  --ui-color-accent: #a32015; /* AMT brand red */
+  --ui-color-accent-hover: #b9000c;
+  --ui-color-accent-subtle: #f8e9e7;
+  /* Colors: chrome (header/footer) */
+  --ui-color-bg-chrome: #e6e6e6;
+  --ui-color-border-chrome: #cfcfcf;
+  /* Colors: secondary brand */
+  --ui-color-teal: #7ebec5;
+  --ui-color-teal-subtle: #e9f4f6;
+  --ui-color-taupe: #7c4d27;
+  --ui-color-taupe-subtle: #f3ece6;
+  --ui-color-slate: #2d3940;
   /* Colors: status */
   --ui-color-warning: #b35c00;
   --ui-color-success: #1f8a52;
