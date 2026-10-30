@@ -1,56 +1,61 @@
 /* Design tokens: the single source of truth for colors, type, spacing, radii. */
 :root {
   /* Colors: neutral */
-  --ui-color-text: #222;
-  --ui-color-text-muted: #777;
+  --ui-color-text: #1d1d1f;
+  --ui-color-text-muted: #6e6e73;
   --ui-color-text-inverse: #fff;
   --ui-color-bg-page: #f5f5f7;
   --ui-color-bg-surface: #fff;
-  --ui-color-bg-inverse: #222;
-  --ui-color-border: #ddd;
-  --ui-color-border-strong: #bbb;
-  --ui-color-border-choice: #ccc;
-  --ui-color-border-subtle: #eee;
-  --ui-color-border-hover: #222;
-  --ui-color-accent: #222;
+  --ui-color-bg-subtle: #f0f0f2;
+  --ui-color-bg-inverse: #1d1d1f;
+  --ui-color-border: #e0e0e3;
+  --ui-color-border-strong: #c7c7cc;
+  --ui-color-border-subtle: #eeeef0;
+  --ui-color-border-hover: #1d1d1f;
+  --ui-color-accent: #d01012; /* LEGO red */
+  --ui-color-accent-hover: #a90d0f;
+  --ui-color-accent-subtle: #fdeceb;
   /* Colors: status */
-  --ui-color-warning: #b60;
-  --ui-color-success: #2a7;
+  --ui-color-warning: #b35c00;
+  --ui-color-success: #1f8a52;
+  --ui-color-success-subtle: #e8f6ee;
 
   /* Typography */
-  --ui-font-family: system-ui, sans-serif;
-  --ui-font-size-xs: 0.8rem;
-  --ui-font-size-sm: 0.85rem;
+  --ui-font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ui-font-size-xs: 0.75rem;
+  --ui-font-size-sm: 0.875rem;
   --ui-font-size-md: 1rem;
-  --ui-font-size-lg: 1.1rem;
-  --ui-font-size-xl: 1.3rem;
+  --ui-font-size-lg: 1.125rem;
+  --ui-font-size-xl: 1.375rem;
   --ui-font-weight-semibold: 600;
   --ui-font-weight-bold: 700;
 
-  /* Spacing scale */
-  --ui-space-1: 0.2rem;
-  --ui-space-2: 0.3rem;
-  --ui-space-3: 0.4rem;
-  --ui-space-4: 0.5rem;
-  --ui-space-5: 0.6rem;
-  --ui-space-6: 0.8rem;
-  --ui-space-7: 0.9rem;
-  --ui-space-8: 1rem;
-  --ui-space-9: 1.5rem;
+  /* Spacing scale (4px grid) */
+  --ui-space-1: 0.25rem; /* 4 */
+  --ui-space-2: 0.5rem; /* 8 */
+  --ui-space-3: 0.75rem; /* 12 */
+  --ui-space-4: 1rem; /* 16 */
+  --ui-space-5: 1.5rem; /* 24 */
+  --ui-space-6: 2rem; /* 32 */
 
   /* Shape */
   --ui-radius-sm: 6px;
-  --ui-radius-md: 8px;
+  --ui-radius-md: 10px;
+  --ui-radius-pill: 999px;
   --ui-border-width: 1px;
   --ui-border-width-thick: 2px;
+  --ui-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.04);
 
   /* Layout & sizes */
-  --ui-page-max-width: 960px;
+  --ui-page-max-width: 1120px;
+  --ui-aside-width: 320px;
+  --ui-control-height: 2.25rem;
+  --ui-control-height-sm: 1.75rem;
   --ui-tab-indicator-width: 3px;
   --ui-choice-min-width: 220px;
   --ui-thumb-width: 56px;
   --ui-thumb-height: 42px;
   --ui-qty-min-width: 2.5rem;
-  --ui-input-width-sm: 4.5rem;
+  --ui-input-width-sm: 4rem;
   --ui-input-width-md: 7rem;
 }

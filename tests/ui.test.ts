@@ -117,7 +117,7 @@ describe('form controls', () => {
     );
     expect(html).toContain('<option value="1" selected>A&amp;B</option>');
     expect(html).toContain('<option value="2">C</option>');
-    expect(field('Set:', html)).toMatch(/^<label>Set: <select/);
+    expect(field('Set:', html)).toMatch(/^<label class="ui-field">Set: <select/);
   });
 });
 
