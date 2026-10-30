@@ -1,15 +1,18 @@
 import type { Item, Kind, SetInventory } from '../src/data/types';
 
-const decode = (s: string) =>
-  s
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&#40;/g, '(')
-    .replace(/&#41;/g, ')')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>');
+const ENTITIES: Record<string, string> = {
+  '&nbsp;': ' ',
+  '&amp;': '&',
+  '&#40;': '(',
+  '&#41;': ')',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&lt;': '<',
+  '&gt;': '>',
+};
+
+// Single pass so decoded output is never re-decoded (avoids double-unescaping).
+const decode = (s: string) => s.replace(/&(?:nbsp|amp|quot|lt|gt|#40|#41|#39);/g, (m) => ENTITIES[m]);
 
 const SECTIONS: Record<string, Kind> = {
   'Regular Items:': 'regular',
