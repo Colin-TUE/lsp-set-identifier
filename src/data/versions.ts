@@ -15,6 +15,7 @@ import type { VersionDef } from './types';
  */
 export const mergeDates: Record<string, string[][]> = {
   '2000430-2': [['Jul 1, 2023', 'Jul 2, 2023']],
+  '2000430-1': [['Jun 16, 2020', 'Jun 20, 2020']],
 };
 
 /**

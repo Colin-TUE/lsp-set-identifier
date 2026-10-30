@@ -3,12 +3,12 @@ import { sets } from './data/sets.generated';
 import { versionOverrides, extraVersions, mergeDates } from './data/versions';
 import { imgUrl, type Item, type ResolvedVersion } from './data/types';
 import { resolveAll } from './logic/versions';
-import { compare, identify, itemIndex, nextQuestion, questionId, separate, type PartRow, type Question } from './logic/analysis';
+import { changeFrom, compare, distinguish, identify, itemIndex, nextQuestion, questionId, separate, type PartRow, type Question } from './logic/analysis';
 
 const versions = resolveAll(sets, versionOverrides, extraVersions, mergeDates);
 const index = itemIndex(versions);
 const byKey = new Map(versions.map((v) => [v.key, v]));
-const vLabel = (v: ResolvedVersion) => `${v.setNo} · ${v.name}${v.pending ? ' (pending)' : ''}`;
+const vLabel = (v: ResolvedVersion) => `${v.setNo} ${v.setName} · ${v.name}${v.pending ? ' (pending)' : ''}`;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 const label = (i: Item) => `${i.partId} | ${i.colorName} | ${i.name}`;
 
@@ -24,6 +24,10 @@ const state = {
 };
 
 const itemOf = (k: string) => index.get(k)!;
+const invLink = (setNo: string) => {
+  const url = sets.find((s) => s.setNo === setNo)?.sourceUrl ?? `https://www.bricklink.com/catalogItemInv.asp?S=${setNo}`;
+  return `<a href="${url}" target="_blank" rel="noopener">BrickLink inventory</a>`;
+};
 
 function partHtml(i: Item, extra = ''): string {
   return `<div class="part"><img src="${imgUrl(i)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
@@ -40,8 +44,15 @@ let currentQ: Question | null = null;
 
 function renderQuestion(q: Question): string {
   currentQ = q;
-  const side = (keys: string[]) =>
-    keys.slice(0, 6).map((k) => partHtml(itemOf(k))).join('') + (keys.length > 6 ? `<div class="muted">+${keys.length - 6} more</div>` : '');
+  const MAX = 3;
+  // Any single element of a side is enough to decide, so show a few easy-to-spot ones:
+  // common (high qty), plain (no printed pattern / assembly), and different shapes.
+  const easy = (k: string) => itemOf(k).qty - (/pb|px|c\d|^x/.test(itemOf(k).partId) ? 100 : 0);
+  const side = (keys: string[]) => {
+    const seen = new Set<string>();
+    const pick = [...keys].sort((x, y) => easy(y) - easy(x)).filter((k) => !seen.has(itemOf(k).partId) && seen.add(itemOf(k).partId)).slice(0, MAX);
+    return `<div class="muted">${keys.length > 1 ? `Any one of these is enough${keys.length > pick.length ? ` (${keys.length} in total)` : ''}:` : ''}</div>` + pick.map((k) => partHtml(itemOf(k))).join('');
+  };
   if (q.b.length)
     return `<div class="card"><b>Which do you have?</b><div class="row">
       <button class="choice" data-ans="A">A${side(q.a)}</button><button class="choice" data-ans="B">B${side(q.b)}</button></div>
@@ -50,12 +61,36 @@ function renderQuestion(q: Question): string {
     <button data-ans="A">Yes</button><button data-ans="B">No</button><button data-ans="skip">Not sure / skip</button></div></div>`;
 }
 
+const brief = (items: Item[], max = 6) => {
+  const top = [...items].sort((x, y) => y.qty - x.qty);
+  return top.slice(0, max).map((i) => partHtml(i, `<span class="qty">${i.qty}</span>`)).join('') + (items.length > max ? `<div class="muted">and ${items.length - max} more</div>` : '');
+};
+
+function candidateHtml(r: ReturnType<typeof identify>[number], cands: ResolvedVersion[]): string {
+  const v = r.version;
+  const others = cands.filter((c) => c !== v);
+  const d = distinguish(v, others);
+  const sameSet = versions.filter((x) => x.setNo === v.setNo);
+  const prev = sameSet[sameSet.indexOf(v) - 1];
+  const ch = prev ? changeFrom(v, prev) : null;
+  const total = v.parts.reduce((a, p) => a + p.qty, 0);
+  const sec = (t: string, items: Item[]) => (items.length ? `<div><b>${t}</b>${brief(items)}</div>` : '');
+  return `<details class="card ${cands.length === 1 ? 'best' : ''}"><summary><b>${esc(vLabel(v))}</b>
+    <span class="muted"> ${total} pieces${state.obs.length ? `, score ${r.score}` : ''}</span></summary>
+    <div class="muted">${invLink(v.setNo)} for the full details of ${esc(v.setNo + ' ' + v.setName)}</div>
+    ${r.missing.length ? `<div class="muted">Not in this version: ${r.missing.map((k) => esc(itemOf(k).colorName + ' ' + itemOf(k).partId)).join(', ')}</div>` : ''}
+    ${r.qtyMismatch.length ? `<div class="muted">Different quantity: ${r.qtyMismatch.map((k) => esc(itemOf(k).partId)).join(', ')}</div>` : ''}
+    ${others.length ? sec(`Parts only in this version (${d.onlyHere.length})`, d.onlyHere) + sec(`Parts the other candidates have that this one doesn't (${d.lacks.length})`, d.lacks) : ''}
+    ${ch && (ch.onlyHere.length || ch.lacks.length) ? `<hr>${sec(`Changed since previous version (${prev.name}): now has (${ch.onlyHere.length})`, ch.onlyHere)}${sec(`...instead of (${ch.lacks.length})`, ch.lacks)}` : ''}
+    ${v.extras.length ? sec(`Spares / extras (${v.extras.length})`, v.extras) : ''}</details>`;
+}
+
 function renderIdentify(): string {
   const cands = candidates();
   
   const opts = [...index.values()].map((i) => `<option value="${esc(label(i))}"></option>`).join('');
   let h = `<h2>1. Narrow down</h2><div class="card row">
-    <label>Set: <select id="setFilter"><option value="">Any</option>${sets.filter((s) => !s.noInventory).map((s) => `<option value="${s.setNo}" ${s.setNo === state.setFilter ? 'selected' : ''}>${esc(s.setNo + ' - ' + s.name)}</option>`).join('')}</select></label></div>
+    <label>Set: <select id="setFilter"><option value="">Any</option>${sets.filter((s) => !s.noInventory).map((s) => `<option value="${s.setNo}" ${s.setNo === state.setFilter ? 'selected' : ''}>${esc(s.setNo + ' - ' + s.name)}</option>`).join('')}</select></label>${state.setFilter ? invLink(state.setFilter) : ''}</div>
     <h2>2. Parts you know</h2><div class="card">
     <div class="row"><input type="text" id="partIn" list="parts" placeholder="Part no, name or colour" size="40"><datalist id="parts">${opts}</datalist>
     <input type="number" id="qtyIn" min="0" placeholder="qty (optional)" style="width:7rem"><button id="addObs">Add</button></div>
@@ -71,15 +106,12 @@ function renderIdentify(): string {
   }
 
   h += `<h2>Result (${cands.length} candidate${cands.length === 1 ? '' : 's'})</h2>`;
-  h += identify(cands, state.obs).map((r) => `<div class="card ${cands.length === 1 ? 'best' : ''}"><b>${esc(vLabel(r.version))}</b>
-    ${state.obs.length ? `<span class="score"> score ${r.score}</span>` : ''}
-    ${r.missing.length ? `<div class="muted">Not in this version: ${r.missing.map((k) => esc(itemOf(k).colorName + ' ' + itemOf(k).partId)).join(', ')}</div>` : ''}
-    ${r.qtyMismatch.length ? `<div class="muted">Different quantity: ${r.qtyMismatch.map((k) => esc(itemOf(k).partId)).join(', ')}</div>` : ''}</div>`).join('');
+  h += identify(cands, state.obs).map((r) => candidateHtml(r, cands)).join('');
   return h;
 }
 
 function versionPicker(sel: Set<string>, name: string): string {
-  return `<div class="card chips">${sets.filter((s) => !s.noInventory).map((s) => `<b>${s.setNo}</b> <span class="muted">${esc(s.name)}</span>` +
+  return `<div class="card chips">${sets.filter((s) => !s.noInventory).map((s) => `<b>${s.setNo} ${esc(s.name)}</b> ${invLink(s.setNo)}` +
     versions.filter((v) => v.setNo === s.setNo).map((v) => `<label><input type="checkbox" data-sel="${name}" value="${v.key}" ${sel.has(v.key) ? 'checked' : ''}> ${esc(v.name)}${v.pending ? ' <span class="pending">(pending)</span>' : ''}</label>`).join('')).join('<hr>')}</div>`;
 }
 

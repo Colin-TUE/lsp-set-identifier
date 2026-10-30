@@ -7,9 +7,6 @@ A simple website to identify which version of a LSP set you have and how to sort
   - `mergeDates`: treat several change dates as one version, e.g. `'2000430-2': [['Jul 1, 2023', 'Jul 2, 2023']]`.
   - `versionOverrides`: replace a set's versions entirely.
   - `extraVersions`: add pending versions.
-  The scraper warns when two change dates are within 31 days of each other and not merged.
+  The scraper warns when two change dates are within half a year (183 days) of each other and not merged.
 - Deploy on Netlify: build `pnpm build`, publish `dist` (see `netlify.toml`).
 - `pnpm install`, `pnpm dev` / `pnpm build` / `pnpm test`
-
-## TODO / ideas
-- A/B guided questions: when a question side contains many differing elements (e.g. "+75" or "+208 more"), it is too much for a user. Refine this, e.g. show only a few most recognisable elements per side, prefer questions with few elements, or split into smaller questions.

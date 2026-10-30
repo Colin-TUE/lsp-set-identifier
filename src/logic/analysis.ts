@@ -58,7 +58,9 @@ export function nextQuestion(candidates: ResolvedVersion[], skipped: Set<string>
     const n = sig.split('|').length;
     const comp = all.filter((x) => !sig.split('|').includes(x)).join('|');
     const balance = Math.min(n, all.length - n) / all.length;
-    const score = balance + (groups.has(comp) ? 0.25 : 0);
+    // Prefer balanced splits, a clean A/B pair, and few differing elements (easier for a user to check).
+    const size = groups.get(sig)!.length + (groups.get(comp)?.length ?? 0);
+    const score = balance + (groups.has(comp) ? 0.25 : 0) - 0.3 * Math.min(1, Math.log10(size) / 2);
     if (!best || score > best.score) best = { sig, score };
   }
   if (!best) return null;
@@ -104,4 +106,31 @@ export function separate(vs: ResolvedVersion[]): SeparationPlan {
   for (const r of c.unique) piles[Object.keys(r.qty)[0]].push(r);
   const shared = [...c.all, ...c.some].map((r) => ({ ...r, sameQty: new Set(Object.values(r.qty)).size === 1 }));
   return { piles, shared };
+}
+
+// ---------- candidate details ----------
+export interface Diff { onlyHere: Item[]; lacks: Item[] }
+
+const keyset = (v: ResolvedVersion) => new Set(v.parts.map(itemKey));
+
+/** Parts only in `v` (absent from every other) and parts every other has but `v` lacks. Falls back to "absent from some other". */
+export function distinguish(v: ResolvedVersion, others: ResolvedVersion[]): Diff {
+  const mine = keyset(v);
+  const os = others.map(keyset);
+  if (!os.length) return { onlyHere: [], lacks: [] };
+  let onlyHere = v.parts.filter((p) => os.every((o) => !o.has(itemKey(p))));
+  const common = new Set([...os[0]].filter((k) => os.every((o) => o.has(k))));
+  let lacks = [...common].filter((k) => !mine.has(k)).map((k) => others[0].parts.find((p) => itemKey(p) === k)!);
+  if (!onlyHere.length && !lacks.length) {
+    onlyHere = v.parts.filter((p) => os.some((o) => !o.has(itemKey(p))));
+    const all = new Map(others.flatMap((o) => o.parts).map((p) => [itemKey(p), p]));
+    lacks = [...all.values()].filter((p) => !mine.has(itemKey(p)));
+  }
+  return { onlyHere, lacks };
+}
+
+/** Change of `v` relative to `prev` (what is new, what was replaced). */
+export function changeFrom(v: ResolvedVersion, prev: ResolvedVersion): Diff {
+  const a = keyset(prev), b = keyset(v);
+  return { onlyHere: v.parts.filter((p) => !a.has(itemKey(p))), lacks: prev.parts.filter((p) => !b.has(itemKey(p))) };
 }

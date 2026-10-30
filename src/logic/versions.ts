@@ -1,5 +1,22 @@
 import type { Item, ResolvedVersion, SetInventory, VersionDef } from '../data/types';
 
+/**
+ * Change-log dates reduced to the dates that actually introduce an alternate:
+ * each Match ID counts at its first mention only (later mentions are edits), and only if it is
+ * still an alternate on the inventory page (IDs that were later removed are ignored).
+ */
+export function effectiveChanges(set: SetInventory): { date: string; matchIds: number[] }[] {
+  const live = new Set(set.items.filter((i) => i.kind === 'alternate').map((i) => i.matchId));
+  const seen = new Set<number>();
+  const out: { date: string; matchIds: number[] }[] = [];
+  for (const g of set.changes ?? []) {
+    const ids = g.matchIds.filter((m) => live.has(m) && !seen.has(m));
+    ids.forEach((m) => seen.add(m));
+    if (ids.length) out.push({ date: g.date, matchIds: ids });
+  }
+  return out;
+}
+
 /** Collapse change groups whose dates are listed together in a merge group into one group. */
 export function mergeChanges(
   changes: { date: string; matchIds: number[] }[],
@@ -28,7 +45,7 @@ export function defaultDefs(
   if (overrides[set.setNo]) return overrides[set.setNo];
   const defs: VersionDef[] = [{ id: 'orig', name: 'Original', alternates: [] }];
   const acc = new Set<number>();
-  for (const g of mergeChanges(set.changes ?? [], merge[set.setNo] ?? [])) {
+  for (const g of mergeChanges(effectiveChanges(set), merge[set.setNo] ?? [])) {
     g.matchIds.forEach((m) => acc.add(m));
     defs.push({ id: g.date, name: `Update ${g.date}`, alternates: [...acc] });
   }

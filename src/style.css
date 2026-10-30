@@ -18,3 +18,4 @@ input[type=text], input[type=number], select { padding: .4rem; border: 1px solid
 .chips label { display: block; padding: .2rem 0; }
 .done { text-decoration: line-through; opacity: .5; }
 @media print { nav, button, .noprint { display: none !important; } body { background: #fff; } }
+summary { cursor: pointer; } details.card[open] summary { margin-bottom: .5rem; }

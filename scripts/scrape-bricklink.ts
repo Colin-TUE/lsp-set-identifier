@@ -6,7 +6,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseChangelog, parseInventory } from './parse';
 import { versionOverrides, extraVersions, mergeDates } from '../src/data/versions';
-import { defaultDefs, mergeChanges } from '../src/logic/versions';
+import { defaultDefs, effectiveChanges, mergeChanges } from '../src/logic/versions';
 import type { SetInventory } from '../src/data/types';
 
 const refresh = process.argv.includes('--refresh');
@@ -64,10 +64,10 @@ for (const line of lines) {
   const alts = new Set(inv.items.filter((i) => i.kind === 'alternate').map((i) => i.matchId));
   const defs = defaultDefs(inv, versionOverrides, extraVersions, mergeDates);
   if (!versionOverrides[setNo]) {
-    const ch = mergeChanges(inv.changes, mergeDates[setNo] ?? []);
+    const ch = mergeChanges(effectiveChanges(inv), mergeDates[setNo] ?? []);
     for (let k = 1; k < ch.length; k++) {
       const gap = (Date.parse(ch[k].date.split(' + ').pop()!) - Date.parse(ch[k - 1].date.split(' + ')[0])) / 86400000;
-      if (gap <= 31) console.warn(`  WARN ${setNo}: "${ch[k - 1].date}" and "${ch[k].date}" are ${Math.round(gap)} days apart - same production run? Merge via mergeDates in src/data/versions.ts`);
+      if (gap <= 183) console.warn(`  WARN ${setNo}: "${ch[k - 1].date}" and "${ch[k].date}" are ${Math.round(gap)} days apart - same production run? Merge via mergeDates in src/data/versions.ts`);
     }
   }
   const used = new Set(defs.flatMap((v) => v.alternates));
