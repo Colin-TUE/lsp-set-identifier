@@ -7,7 +7,7 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       exclude: ['src/data/sets.generated.ts', 'src/main.ts'],
       reporter: ['text', 'json-summary', 'json'],
-      thresholds: { lines: 80, functions: 80, statements: 80, branches: 70 },
+      thresholds: { branches: 99, functions: 99, lines: 99, statements: 99 },
     },
   },
 });

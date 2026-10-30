@@ -37,6 +37,7 @@ import { sets } from './data/sets.generated';
 import { versionOverrides, extraVersions, mergeDates } from './data/versions';
 import { imgUrl, itemKey, type Item, type ResolvedVersion } from './data/types';
 import { resolveAll } from './logic/versions';
+import { candidatesFor, hasProgress, listProducts, resetIdentify as resetIdentifyState } from './logic/flow';
 import {
   changeFrom,
   compare,
@@ -84,35 +85,12 @@ const invLink = (setNo: string) => {
     sets.find((s) => s.setNo === setNo)?.sourceUrl ?? `https://www.bricklink.com/catalogItemInv.asp?S=${setNo}`;
   return link(url, 'BrickLink inventory ↗', { external: true });
 };
-/** Product number as printed on the box: BrickLink's "2000414-4" without the "-4" variant suffix. */
-const productNo = (setNo: string) => setNo.replace(/-\d+$/, '');
-/** Product name without BrickLink's variant notes like "(214 Pieces Version)" or "{2013 Version}". */
-const productName = (name: string) => name.replace(/\s*[({][^)}]*[)}]\s*$/, '');
-const products = [
-  ...new Map(
-    sets.filter((s) => !s.noInventory).map((s) => [productNo(s.setNo), productName(s.name)] as const),
-  ).entries(),
-].sort(([a], [b]) => a.localeCompare(b));
-const resetIdentify = (keepParts = false) => {
-  if (!keepParts) {
-    // Moving on to a new box: forget its parts and the product number picked for it.
-    state.obs = [];
-    state.setFilter = '';
-  }
-  state.answers = [];
-  state.skipped.clear();
-};
+const products = listProducts(sets);
+const resetIdentify = (keepParts = false) => resetIdentifyState(state, keepParts);
 
 const partHtml = (i: Item, trailing = '') => partRow(i, { img: imgUrl(i), trailing });
 
-function candidates(): ResolvedVersion[] {
-  let c = versions.filter((v) => !state.setFilter || productNo(v.setNo) === state.setFilter);
-  for (const a of state.answers) c = c.filter((v) => a.keep.includes(v.key));
-  // Parts the user has entered rule out versions that do not contain them (unless that would rule out everything).
-  const has = (v: ResolvedVersion, k: string) => v.parts.some((p) => itemKey(p) === k);
-  const fit = c.filter((v) => state.obs.every((o) => has(v, o.key)));
-  return fit.length ? fit : c;
-}
+const candidates = () => candidatesFor(versions, state);
 
 // ---------- Step 1: identify ----------
 
@@ -212,7 +190,7 @@ function candidateDetails(r: ReturnType<typeof identify>[number], cands: Resolve
 function renderIdentify(): string {
   const cands = candidates();
   const ranked = identify(cands, state.obs);
-  const progressed = state.answers.length || state.skipped.size;
+  const progressed = hasProgress(state);
 
   // Box picker: which set is printed on the box narrows things down a lot.
   const setOptions = [
@@ -659,7 +637,8 @@ document.addEventListener('click', (e) => {
     const qid = questionId(currentQ);
     if (d.ans === 'skip') state.skipped.add(qid);
     else state.answers.push({ qid, keep: d.ans === 'A' ? currentQ.aSet : currentQ.bSet });
-  } else if (t.id === 'resetAns') resetIdentify(true); // keep the looked-up parts
+  } else if (t.id === 'resetAns')
+    resetIdentify(true); // keep the looked-up parts
   else if (t.id === 'nextBox') resetIdentify();
   else if (t.id === 'clearChk') {
     if (!confirm('Clear all ticks?')) return;

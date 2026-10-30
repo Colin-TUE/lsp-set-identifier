@@ -1,6 +1,16 @@
 import { describe, expect, test } from 'vitest';
 import {
   attrs,
+  badge,
+  dialog,
+  empty,
+  layout,
+  list,
+  listRowMeta,
+  progress,
+  section,
+  spacer,
+  stack,
   button,
   card,
   checkbox,
@@ -146,5 +156,59 @@ describe('imgUrl', () => {
     expect(imgUrl({ type: 'P', partId: '3001', colorId: 5 })).toBe('https://img.bricklink.com/P/5/3001.jpg');
     expect(imgUrl({ type: 'G', partId: 'g1', colorId: 0 })).toBe('https://img.bricklink.com/G/g1.jpg');
     expect(imgUrl({ type: 'M', partId: 'm1', colorId: 0 })).toBe('https://img.bricklink.com/M/m1.jpg');
+  });
+});
+
+describe('layout, badges, sections, progress and dialog', () => {
+  test('stack gap classes (md is the default)', () => {
+    expect(stack('x')).toBe('<div class="ui-stack">x</div>');
+    expect(stack('x', { gap: 'md' })).not.toContain('--md');
+    expect(stack('x', { gap: 'lg' })).toContain('ui-stack--lg');
+    expect(spacer()).toContain('ui-spacer');
+  });
+  test('row variants and layout', () => {
+    expect(row('x', { between: true, stretch: true })).toContain('ui-row--between ui-row--stretch');
+    expect(layout('M', 'A')).toMatch(/M<\/div><aside class="ui-layout__aside">A<\/aside>/);
+  });
+  test('badge tone', () => {
+    expect(badge('x')).toBe('<span class="ui-badge">x</span>');
+    expect(badge('x', { tone: 'success' })).toContain('ui-badge--success');
+  });
+  test('button sizes', () => {
+    expect(button('x', { size: 'sm' })).toContain('ui-button--sm');
+    expect(button('x', { size: 'icon' })).toContain('ui-button--sm ui-button--icon');
+    expect(button('x', { size: 'md' })).not.toContain('--sm');
+  });
+  test('card and collapsible remaining options', () => {
+    const c = card('x', { success: true, flush: true, noPrint: true, muted: true });
+    expect(c).toMatch(/ui-card--success ui-card--flush ui-noprint ui-text-muted/);
+    expect(collapsible('S', 'B', { open: true })).toContain('<details class="ui-card" open>');
+  });
+  test('section defaults to level 2, supports level 3 and actions', () => {
+    const plain = section('T', 'B');
+    expect(plain).toContain('<h2');
+    expect(plain).toContain('ui-card--flush');
+    expect(section('T', 'B', { level: 3, actions: 'ACT' })).toMatch(/<h3.*<\/h3>ACT<\/div>/);
+  });
+  test('empty and list helpers', () => {
+    expect(empty('x')).toContain('ui-empty');
+    expect(list('x')).toContain('ui-list');
+    expect(listRowMeta('x')).toContain('ui-list-row__meta');
+    expect(listRow('x', { head: true })).toContain('ui-list-row--head');
+    expect(listRow('x')).toBe('<div class="ui-list-row">x</div>');
+  });
+  test('progress handles an empty total', () => {
+    expect(progress(1, 4)).toContain('width:25%');
+    expect(progress(0, 0)).toContain('width:0%');
+  });
+  test('dialog renders a footer only when given and escapes id/title', () => {
+    const d = dialog('a"b', 'T<', 'BODY');
+    expect(d).toContain('id="a&quot;b"');
+    expect(d).toContain('aria-label="T&lt;"');
+    expect(d).not.toContain('ui-dialog__foot');
+    expect(dialog('x', 'T', 'B', { footer: 'F' })).toContain('<div class="ui-dialog__foot">F</div>');
+  });
+  test('textInput grow', () => {
+    expect(textInput({}, { grow: true })).toContain('ui-input--grow');
   });
 });
