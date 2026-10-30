@@ -19,8 +19,8 @@
 
   /* Typography */
   --ui-font-family: system-ui, sans-serif;
-  --ui-font-size-xs: .8rem;
-  --ui-font-size-sm: .85rem;
+  --ui-font-size-xs: 0.8rem;
+  --ui-font-size-sm: 0.85rem;
   --ui-font-size-md: 1rem;
   --ui-font-size-lg: 1.1rem;
   --ui-font-size-xl: 1.3rem;
@@ -28,13 +28,13 @@
   --ui-font-weight-bold: 700;
 
   /* Spacing scale */
-  --ui-space-1: .2rem;
-  --ui-space-2: .3rem;
-  --ui-space-3: .4rem;
-  --ui-space-4: .5rem;
-  --ui-space-5: .6rem;
-  --ui-space-6: .8rem;
-  --ui-space-7: .9rem;
+  --ui-space-1: 0.2rem;
+  --ui-space-2: 0.3rem;
+  --ui-space-3: 0.4rem;
+  --ui-space-4: 0.5rem;
+  --ui-space-5: 0.6rem;
+  --ui-space-6: 0.8rem;
+  --ui-space-7: 0.9rem;
   --ui-space-8: 1rem;
   --ui-space-9: 1.5rem;
 

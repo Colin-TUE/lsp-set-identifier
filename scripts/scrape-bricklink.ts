@@ -14,7 +14,10 @@ const cacheDir = 'scripts/cache';
 mkdirSync(cacheDir, { recursive: true });
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const lines = readFileSync('scripts/sets.txt', 'utf8').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+const lines = readFileSync('scripts/sets.txt', 'utf8')
+  .split('\n')
+  .map((l) => l.trim())
+  .filter((l) => l && !l.startsWith('#'));
 const sets: SetInventory[] = [];
 
 async function loadChangelog(setNo: string, local: boolean) {
@@ -25,7 +28,10 @@ async function loadChangelog(setNo: string, local: boolean) {
   else {
     const url = `https://www.bricklink.com/catalogInvChangeItem.asp?itemType=S&itemNo=${setNo}&viewDate=Y&viewStatus=1`;
     const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-    if (!res.ok) { console.warn(`  WARN ${setNo}: change log HTTP ${res.status}`); return []; }
+    if (!res.ok) {
+      console.warn(`  WARN ${setNo}: change log HTTP ${res.status}`);
+      return [];
+    }
     html = Buffer.from(await res.arrayBuffer()).toString('latin1');
     writeFileSync(cache, html, 'latin1');
     await sleep(1500);
@@ -36,14 +42,27 @@ async function loadChangelog(setNo: string, local: boolean) {
 for (const line of lines) {
   if (line.startsWith('!')) {
     const [setNo, ...rest] = line.slice(1).split(/\s+/);
-    sets.push({ setNo, name: rest.join(' '), sourceUrl: `https://www.bricklink.com/v2/catalog/catalogitem.page?S=${setNo}`, items: [], changes: [], noInventory: true });
+    sets.push({
+      setNo,
+      name: rest.join(' '),
+      sourceUrl: `https://www.bricklink.com/v2/catalog/catalogitem.page?S=${setNo}`,
+      items: [],
+      changes: [],
+      noInventory: true,
+    });
     console.log(`${setNo}: no inventory (listed only)`);
     continue;
   }
-  let setNo: string, html: string, src: string, local = false;
+  let setNo: string,
+    html: string,
+    src: string,
+    local = false;
   if (line.includes('=') && !line.startsWith('http')) {
     const [n, path] = line.split('=');
-    setNo = n; src = path; local = true; html = readFileSync(path, 'latin1');
+    setNo = n;
+    src = path;
+    local = true;
+    html = readFileSync(path, 'latin1');
   } else {
     setNo = new URL(line).searchParams.get('S')!;
     src = line;
@@ -54,12 +73,19 @@ for (const line of lines) {
       const res = await fetch(line, { headers: { 'User-Agent': 'Mozilla/5.0' } });
       if (!res.ok) throw new Error(`${setNo}: HTTP ${res.status}`);
       html = Buffer.from(await res.arrayBuffer()).toString('latin1');
-      if (!html.includes('IV_ITEM')) throw new Error(`${setNo}: no inventory in response (blocked?). Save the page manually and use "setNo=file.html".`);
+      if (!html.includes('IV_ITEM'))
+        throw new Error(
+          `${setNo}: no inventory in response (blocked?). Save the page manually and use "setNo=file.html".`,
+        );
       writeFileSync(cache, html, 'latin1');
       await sleep(1500);
     }
   }
-  const inv = parseInventory(html, setNo, src.startsWith('http') ? src : `https://www.bricklink.com/catalogItemInv.asp?S=${setNo}`);
+  const inv = parseInventory(
+    html,
+    setNo,
+    src.startsWith('http') ? src : `https://www.bricklink.com/catalogItemInv.asp?S=${setNo}`,
+  );
   inv.changes = await loadChangelog(setNo, local);
   const alts = new Set(inv.items.filter((i) => i.kind === 'alternate').map((i) => i.matchId));
   const defs = defaultDefs(inv, versionOverrides, extraVersions, mergeDates);
@@ -67,11 +93,16 @@ for (const line of lines) {
     const ch = mergeChanges(effectiveChanges(inv), mergeDates[setNo] ?? []);
     for (let k = 1; k < ch.length; k++) {
       const gap = (Date.parse(ch[k].date.split(' + ').pop()!) - Date.parse(ch[k - 1].date.split(' + ')[0])) / 86400000;
-      if (gap <= 183) console.warn(`  WARN ${setNo}: "${ch[k - 1].date}" and "${ch[k].date}" are ${Math.round(gap)} days apart - same production run? Merge via mergeDates in src/data/versions.ts`);
+      if (gap <= 183)
+        console.warn(
+          `  WARN ${setNo}: "${ch[k - 1].date}" and "${ch[k].date}" are ${Math.round(gap)} days apart - same production run? Merge via mergeDates in src/data/versions.ts`,
+        );
     }
   }
   const used = new Set(defs.flatMap((v) => v.alternates));
-  console.log(`${setNo}: ${inv.items.length} items, ${inv.changes.length} dated change groups, versions: ${defs.map((d) => d.name).join(' | ')}`);
+  console.log(
+    `${setNo}: ${inv.items.length} items, ${inv.changes.length} dated change groups, versions: ${defs.map((d) => d.name).join(' | ')}`,
+  );
   for (const m of alts) if (!used.has(m)) console.warn(`  WARN ${setNo}: match ID ${m} not in any version`);
   sets.push(inv);
 }

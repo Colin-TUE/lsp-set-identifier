@@ -3,13 +3,13 @@ import { sets } from '../src/data/sets.generated';
 import { versionOverrides, extraVersions, mergeDates } from '../src/data/versions';
 import { resolveAll } from '../src/logic/versions';
 import { compare, identify, nextQuestion, separate } from '../src/logic/analysis';
-import { itemKey } from '../src/data/types';
 
 const all = resolveAll(sets, versionOverrides, extraVersions, mergeDates);
 const get = (k: string) => all.find((v) => v.key === k)!;
 
 test('versions resolve swaps', () => {
-  const o = get('2000414-4/orig'), b = get('2000414-4/Oct 17, 2026');
+  const o = get('2000414-4/orig'),
+    b = get('2000414-4/Oct 17, 2026');
   expect(o.parts.some((p) => p.partId === '3957b' && p.colorId === 16)).toBe(true);
   expect(b.parts.some((p) => p.partId === '3957b' && p.colorId === 16)).toBe(false);
   expect(b.parts.some((p) => p.partId === '3957b' && p.colorId === 15)).toBe(true);
@@ -33,7 +33,8 @@ test('2000430-2 versions differ', () => {
 });
 
 test('pending 2026 version of 2000430-2 is built from the change request', () => {
-  const v23 = get('2000430-2/Jul 1, 2023 + Jul 2, 2023'), v26 = get('2000430-2/2026');
+  const v23 = get('2000430-2/Jul 1, 2023 + Jul 2, 2023'),
+    v26 = get('2000430-2/2026');
   expect(v26.pending).toBe(true);
   expect(v26.parts.reduce((a, p) => a + p.qty, 0)).toBe(v23.parts.reduce((a, p) => a + p.qty, 0));
   expect(v26.parts.some((p) => p.partId === '3003' && p.colorId === 156 && p.qty === 20)).toBe(true);
@@ -42,7 +43,8 @@ test('pending 2026 version of 2000430-2 is built from the change request', () =>
 });
 
 test('pending 2026 version of 2000431-1 applies swaps, removals, quantity changes and additions', () => {
-  const o = get('2000431-1/orig'), v = get('2000431-1/2026');
+  const o = get('2000431-1/orig'),
+    v = get('2000431-1/2026');
   expect(v.pending).toBe(true);
   expect(v.parts.some((p) => p.partId === '3666')).toBe(false);
   expect(v.parts.find((p) => p.partId === '2780')!.qty).toBe(100);

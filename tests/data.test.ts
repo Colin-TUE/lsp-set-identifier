@@ -9,15 +9,24 @@ const withInv = sets.filter((s) => !s.noInventory);
 const resolved = resolveAll(sets, versionOverrides, extraVersions, mergeDates);
 
 test('every set listed in sets.txt is in the generated data', () => {
-  const lines = readFileSync('scripts/sets.txt', 'utf8').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+  const lines = readFileSync('scripts/sets.txt', 'utf8')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith('#'));
   const wanted = lines.map((l) => (l.startsWith('!') ? l.slice(1).split(/\s+/)[0] : new URL(l).searchParams.get('S')!));
   expect(sets.map((s) => s.setNo).sort()).toEqual(wanted.sort());
 });
 
 test('every set with an inventory has regular items and at least one version', () => {
   for (const s of withInv) {
-    expect(s.items.some((i) => i.kind === 'regular'), s.setNo).toBe(true);
-    expect(resolved.some((v) => v.setNo === s.setNo), s.setNo).toBe(true);
+    expect(
+      s.items.some((i) => i.kind === 'regular'),
+      s.setNo,
+    ).toBe(true);
+    expect(
+      resolved.some((v) => v.setNo === s.setNo),
+      s.setNo,
+    ).toBe(true);
   }
 });
 
@@ -53,12 +62,23 @@ test('mergeDates merge at least two dates and none are left unmerged', () => {
 
 test('overrides and extra versions reference known sets', () => {
   for (const setNo of [...Object.keys(versionOverrides), ...Object.keys(extraVersions)])
-    expect(withInv.some((s) => s.setNo === setNo), setNo).toBe(true);
+    expect(
+      withInv.some((s) => s.setNo === setNo),
+      setNo,
+    ).toBe(true);
 });
 
 test('no two versions of a set have identical contents', () => {
   for (const s of withInv) {
-    const sig = resolved.filter((v) => v.setNo === s.setNo).map((v) => [v.id, v.parts.map((p) => `${itemKey(p)}x${p.qty}`).sort().join(',')]);
+    const sig = resolved
+      .filter((v) => v.setNo === s.setNo)
+      .map((v) => [
+        v.id,
+        v.parts
+          .map((p) => `${itemKey(p)}x${p.qty}`)
+          .sort()
+          .join(','),
+      ]);
     const seen = new Map<string, string>();
     for (const [id, c] of sig) {
       // The synthetic "all alternates" fallback may equal another version, so only flag real duplicates.
@@ -71,7 +91,14 @@ test('no two versions of a set have identical contents', () => {
 test('pending versions differ from the version they build on', () => {
   for (const v of resolved.filter((x) => x.pending)) {
     const others = resolved.filter((x) => x.setNo === v.setNo && x !== v);
-    const sig = (r: typeof v) => r.parts.map((p) => `${itemKey(p)}x${p.qty}`).sort().join(',');
-    expect(others.some((o) => sig(o) === sig(v)), `${v.key} equals another version`).toBe(false);
+    const sig = (r: typeof v) =>
+      r.parts
+        .map((p) => `${itemKey(p)}x${p.qty}`)
+        .sort()
+        .join(',');
+    expect(
+      others.some((o) => sig(o) === sig(v)),
+      `${v.key} equals another version`,
+    ).toBe(false);
   }
 });

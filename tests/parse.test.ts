@@ -26,5 +26,8 @@ test('colors and match ids', () => {
 import { parseChangelog } from '../scripts/parse';
 test('changelog groups by date', () => {
   const g = parseChangelog(readFileSync('fixtures/2000430-2.changelog.html', 'latin1'));
-  expect(g).toEqual([{ date: 'Jul 1, 2023', matchIds: [1] }, { date: 'Jul 2, 2023', matchIds: [2, 3] }]);
+  expect(g).toEqual([
+    { date: 'Jul 1, 2023', matchIds: [1] },
+    { date: 'Jul 2, 2023', matchIds: [2, 3] },
+  ]);
 });

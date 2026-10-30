@@ -13,23 +13,43 @@ export function itemIndex(vs: ResolvedVersion[]): Map<string, Item> {
 }
 
 // ---------- identify ----------
-export interface Observation { key: string; qty?: number }
-export interface Ranked { version: ResolvedVersion; score: number; matched: string[]; missing: string[]; qtyMismatch: string[] }
+export interface Observation {
+  key: string;
+  qty?: number;
+}
+export interface Ranked {
+  version: ResolvedVersion;
+  score: number;
+  matched: string[];
+  missing: string[];
+  qtyMismatch: string[];
+}
 
 export function identify(vs: ResolvedVersion[], obs: Observation[]): Ranked[] {
-  return vs.map((version) => {
-    const q = qtyMap(version);
-    const r: Ranked = { version, score: 0, matched: [], missing: [], qtyMismatch: [] };
-    for (const o of obs) {
-      const have = q.get(o.key);
-      if (have === undefined) { r.score -= 3; r.missing.push(o.key); continue; }
-      r.score += 2; r.matched.push(o.key);
-      if (o.qty !== undefined) {
-        if (o.qty === have) r.score += 1; else { r.score -= 0.5; r.qtyMismatch.push(o.key); }
+  return vs
+    .map((version) => {
+      const q = qtyMap(version);
+      const r: Ranked = { version, score: 0, matched: [], missing: [], qtyMismatch: [] };
+      for (const o of obs) {
+        const have = q.get(o.key);
+        if (have === undefined) {
+          r.score -= 3;
+          r.missing.push(o.key);
+          continue;
+        }
+        r.score += 2;
+        r.matched.push(o.key);
+        if (o.qty !== undefined) {
+          if (o.qty === have) r.score += 1;
+          else {
+            r.score -= 0.5;
+            r.qtyMismatch.push(o.key);
+          }
+        }
       }
-    }
-    return r;
-  }).sort((a, b) => b.score - a.score);
+      return r;
+    })
+    .sort((a, b) => b.score - a.score);
 }
 
 // ---------- guided questions ----------
@@ -72,8 +92,16 @@ export function nextQuestion(candidates: ResolvedVersion[], skipped: Set<string>
 export const questionId = (q: Question) => q.aSet.join('|');
 
 // ---------- common ----------
-export interface PartRow { key: string; item: Item; qty: Record<string, number> }
-export interface CommonResult { all: PartRow[]; some: PartRow[]; unique: PartRow[] }
+export interface PartRow {
+  key: string;
+  item: Item;
+  qty: Record<string, number>;
+}
+export interface CommonResult {
+  all: PartRow[];
+  some: PartRow[];
+  unique: PartRow[];
+}
 
 export function compare(vs: ResolvedVersion[]): CommonResult {
   const idx = itemIndex(vs);
@@ -86,7 +114,9 @@ export function compare(vs: ResolvedVersion[]): CommonResult {
   }
   const n = vs.length;
   const cnt = (r: PartRow) => Object.keys(r.qty).length;
-  const sort = (a: PartRow, b: PartRow) => a.item.colorName.localeCompare(b.item.colorName) || a.item.partId.localeCompare(b.item.partId, undefined, { numeric: true });
+  const sort = (a: PartRow, b: PartRow) =>
+    a.item.colorName.localeCompare(b.item.colorName) ||
+    a.item.partId.localeCompare(b.item.partId, undefined, { numeric: true });
   return {
     all: rows.filter((r) => cnt(r) === n).sort(sort),
     some: rows.filter((r) => cnt(r) > 1 && cnt(r) < n).sort(sort),
@@ -109,7 +139,10 @@ export function separate(vs: ResolvedVersion[]): SeparationPlan {
 }
 
 // ---------- candidate details ----------
-export interface Diff { onlyHere: Item[]; lacks: Item[] }
+export interface Diff {
+  onlyHere: Item[];
+  lacks: Item[];
+}
 
 const keyset = (v: ResolvedVersion) => new Set(v.parts.map(itemKey));
 
@@ -131,6 +164,7 @@ export function distinguish(v: ResolvedVersion, others: ResolvedVersion[]): Diff
 
 /** Change of `v` relative to `prev` (what is new, what was replaced). */
 export function changeFrom(v: ResolvedVersion, prev: ResolvedVersion): Diff {
-  const a = keyset(prev), b = keyset(v);
+  const a = keyset(prev),
+    b = keyset(v);
   return { onlyHere: v.parts.filter((p) => !a.has(itemKey(p))), lacks: prev.parts.filter((p) => !b.has(itemKey(p))) };
 }

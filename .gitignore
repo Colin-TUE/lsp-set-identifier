@@ -3,3 +3,4 @@ dist
 tmp
 scripts/cache
 .DS_Store
+coverage

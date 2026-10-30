@@ -29,7 +29,10 @@ export interface VersionDef {
   name: string;
   alternates: number[];
   /** Explicit part replacements, for versions not (yet) on the BrickLink page (e.g. from a change request). Applied after `alternates`. */
-  swaps?: { from: { partId: string; colorId: number }; to: Pick<Item, 'partId' | 'colorId' | 'colorName'> & { name?: string; type?: string } }[];
+  swaps?: {
+    from: { partId: string; colorId: number };
+    to: Pick<Item, 'partId' | 'colorId' | 'colorName'> & { name?: string; type?: string };
+  }[];
   /** Regular parts deleted from this version. */
   removes?: { partId: string; colorId: number }[];
   /** Regular parts whose quantity changes (applied after swaps, so use the new part/colour). */

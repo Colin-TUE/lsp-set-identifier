@@ -1,0 +1,7 @@
+dist
+coverage
+tmp
+fixtures
+scripts/cache
+src/data/sets.generated.ts
+pnpm-lock.yaml
