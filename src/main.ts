@@ -18,11 +18,14 @@ const state = {
   setFilter: '',
   answers: [] as { qid: string; keep: string[] }[],
   skipped: new Set<string>(),
-  selCommon: new Set<string>(),
-  selSep: new Set<string>(),
+  workshop: JSON.parse(localStorage.getItem('lsp-workshop') ?? '{}') as Record<string, number>,
   checked: new Set<string>(JSON.parse(localStorage.getItem('lsp-checked') ?? '[]')),
 };
 
+const saveWorkshop = () => localStorage.setItem('lsp-workshop', JSON.stringify(state.workshop));
+for (const k of Object.keys(state.workshop)) if (!byKey.has(k)) delete state.workshop[k];
+const count = (v: ResolvedVersion) => state.workshop[v.key] ?? 0;
+const inWorkshop = () => versions.filter((v) => count(v) > 0);
 const itemOf = (k: string) => index.get(k)!;
 const invLink = (setNo: string) => {
   const url = sets.find((s) => s.setNo === setNo)?.sourceUrl ?? `https://www.bricklink.com/catalogItemInv.asp?S=${setNo}`;
@@ -79,7 +82,8 @@ function candidateHtml(r: ReturnType<typeof identify>[number], cands: ResolvedVe
   const total = v.parts.reduce((a, p) => a + p.qty, 0);
   const sec = (t: string, items: Item[]) => (items.length ? `<div><b>${t}</b>${brief(items)}</div>` : '');
   return `<details class="card ${cands.length === 1 ? 'best' : ''}"><summary><b>${esc(vLabel(v))}</b>
-    <span class="muted"> ${total} pieces${state.obs.length ? `, score ${r.score}` : ''}</span></summary>
+    <span class="muted"> ${total} pieces${state.obs.length ? `, score ${r.score}` : ''}</span>
+    <button data-add="${v.key}" class="noprint">${count(v) ? `In workshop (${count(v)}) +1` : 'Add to workshop'}</button></summary>
     <div class="muted">${invLink(v.setNo)} for the full details of ${esc(v.setNo + ' ' + v.setName)}</div>
     ${r.missing.length ? `<div class="muted">Not in this version: ${r.missing.map((k) => esc(itemOf(k).colorName + ' ' + itemOf(k).partId)).join(', ')}</div>` : ''}
     ${r.qtyMismatch.length ? `<div class="muted">Different quantity: ${r.qtyMismatch.map((k) => esc(itemOf(k).partId)).join(', ')}</div>` : ''}
@@ -92,7 +96,9 @@ function renderIdentify(): string {
   const cands = candidates();
   
   const opts = [...index.values()].map((i) => `<option value="${esc(label(i))}"></option>`).join('');
-  let h = `<h2>1. Narrow down</h2><div class="card row">
+  const ws = inWorkshop();
+  let h = ws.length ? `<div class="card"><b>Workshop:</b> ${ws.map((v) => `${count(v)} &times; ${esc(v.setNo + ' ' + v.name)}`).join('; ')} <span class="muted">(edit on the Common parts or Separate tab)</span></div>` : '';
+  h += `<h2>1. Narrow down</h2><div class="card row">
     <label>Set: <select id="setFilter"><option value="">Any</option>${sets.filter((s) => !s.noInventory).map((s) => `<option value="${s.setNo}" ${s.setNo === state.setFilter ? 'selected' : ''}>${esc(s.setNo + ' - ' + s.name)}</option>`).join('')}</select></label>${state.setFilter ? invLink(state.setFilter) : ''}</div>
     <h2>2. Parts you know</h2><div class="card">
     <div class="row"><input type="text" id="partIn" list="parts" placeholder="Part no, name or colour" size="40"><datalist id="parts">${opts}</datalist>
@@ -115,9 +121,12 @@ function renderIdentify(): string {
   return h;
 }
 
-function versionPicker(sel: Set<string>, name: string): string {
-  return `<div class="card chips">${sets.filter((s) => !s.noInventory).map((s) => `<b>${s.setNo} ${esc(s.name)}</b> ${invLink(s.setNo)}` +
-    versions.filter((v) => v.setNo === s.setNo).map((v) => `<label><input type="checkbox" data-sel="${name}" value="${v.key}" ${sel.has(v.key) ? 'checked' : ''}> ${esc(v.name)}${v.pending ? ' <span class="pending">(pending)</span>' : ''}</label>`).join('')).join('<hr>')}</div>`;
+function versionPicker(): string {
+  const picker = `<details class="card chips"><summary><b>Add or remove sets</b></summary>${sets.filter((s) => !s.noInventory).map((s) => `<b>${s.setNo} ${esc(s.name)}</b> ${invLink(s.setNo)}` +
+    versions.filter((v) => v.setNo === s.setNo).map((v) => `<label><input type="checkbox" data-sel="${v.key}" ${count(v) ? 'checked' : ''}> ${esc(v.name)}${v.pending ? ' <span class="pending">(pending)</span>' : ''}</label>`).join('')).join('<hr>')}</details>`;
+  const list = inWorkshop();
+  return `<div class="card"><b>Workshop sets</b>${list.length ? list.map((v) => `<div class="row part"><input type="number" min="1" value="${count(v)}" data-cnt="${v.key}" style="width:4.5rem"> &times;
+    <span class="meta">${esc(vLabel(v))}</span><button data-rmws="${v.key}">Remove</button></div>`).join('') : '<div class="muted">No sets yet. Add sets below, or identify a set on the Identify tab and use "Add to workshop".</div>'}</div>` + picker;
 }
 
 const qtyCells = (vs: ResolvedVersion[], r: PartRow) =>
@@ -125,29 +134,32 @@ const qtyCells = (vs: ResolvedVersion[], r: PartRow) =>
 const legend = (vs: ResolvedVersion[]) => `<div class="muted">Quantity columns: ${vs.map((v, n) => `${n + 1} = ${esc(vLabel(v))}`).join(' | ')}</div>`;
 
 function renderCommon(): string {
-  const h = `<h2>Select versions to compare</h2>` + versionPicker(state.selCommon, 'common');
-  const vs = [...state.selCommon].map((k) => byKey.get(k)!);
-  if (vs.length < 2) return h + `<p class="muted">Select at least two versions.</p>`;
+  const h = `<h2>Workshop sets</h2>` + versionPicker();
+  const vs = inWorkshop();
+  if (vs.length < 2) return h + `<p class="muted">Add at least two different versions to compare.</p>`;
   const c = compare(vs);
-  const sec = (t: string, rows: PartRow[]) => `<h2>${t} (${rows.length})</h2>${legend(vs)}<div class="card">${rows.map((r) => partHtml(r.item, qtyCells(vs, r))).join('') || '<span class="muted">none</span>'}</div>`;
+  const sec = (t: string, rows: PartRow[]) => `<h2>${t} (${rows.length})</h2>${legend(vs)}<div class="muted">Quantities are per box.</div><div class="card">${rows.map((r) => partHtml(r.item, qtyCells(vs, r))).join('') || '<span class="muted">none</span>'}</div>`;
   return h + sec('In all selected versions', c.all) + sec('In some versions', c.some) + sec('Only in one version', c.unique);
 }
 
 function renderSeparate(): string {
-  let h = `<h2>Which versions were mixed?</h2>` + versionPicker(state.selSep, 'sep');
-  const vs = [...state.selSep].map((k) => byKey.get(k)!);
-  if (vs.length < 2) return h + `<p class="muted">Select at least two versions.</p>`;
+  let h = `<h2>Workshop sets</h2>` + versionPicker();
+  const vs = inWorkshop();
+  if (vs.length < 2) return h + `<p class="muted">Add at least two different versions to get a sorting guide.</p>`;
   const p = separate(vs);
+  const total = (r: PartRow, v: ResolvedVersion) => (r.qty[v.key] ?? 0) * count(v);
+  const totalCells = (r: PartRow) => vs.map((v) => `<span class="qty" title="${esc(vLabel(v))}" style="min-width:2.5rem">${r.qty[v.key] ? total(r, v) : '-'}</span>`).join('');
   const chk = (id: string, i: Item, qtyHtml: string) => `<label class="part ${state.checked.has(id) ? 'done' : ''}"><input type="checkbox" data-chk="${esc(id)}" ${state.checked.has(id) ? 'checked' : ''}>
     <img src="${imgUrl(i)}" alt="" onerror="this.style.visibility='hidden'"><span class="meta"><b>${esc(i.colorName)}</b> ${esc(i.name)}<br><span class="muted">${esc(i.partId)}</span></span>${qtyHtml}</label>`;
   h += `<div class="row noprint"><button id="clearChk">Clear checkmarks</button><button id="print">Print</button></div>`;
+  h += `<p class="muted">Quantities are totals for the whole workshop (per-box quantity &times; number of boxes).</p>`;
   h += `<h2>Step 1: sort parts that belong to only one version</h2>`;
   for (const v of vs)
-    h += `<h3>${esc(vLabel(v))}</h3><div class="card">${p.piles[v.key].map((r) => chk(`${v.key}|${r.key}`, r.item, `<span class="qty">${r.qty[v.key]}</span>`)).join('') || '<span class="muted">No unique parts</span>'}</div>`;
+    h += `<h3>${count(v)} &times; ${esc(vLabel(v))}</h3><div class="card">${p.piles[v.key].map((r) => chk(`${v.key}|${r.key}`, r.item, `<span class="qty">${total(r, v)}</span><span class="muted">(${r.qty[v.key]} per box)</span>`)).join('') || '<span class="muted">No unique parts</span>'}</div>`;
   h += `<h2>Step 2: shared parts - count into piles</h2>${legend(vs)}<div class="card">` +
-    p.shared.map((r) => chk(`shared|${r.key}`, r.item, qtyCells(vs, r) + (r.sameQty ? '<span class="muted">same in all</span>' : ''))).join('') + '</div>';
+    p.shared.map((r) => chk(`shared|${r.key}`, r.item, totalCells(r))).join('') + '</div>';
   const ex = vs.filter((v) => v.extras.length);
-  if (ex.length) h += `<h2>Optional spares (extras)</h2>` + ex.map((v) => `<h3>${esc(vLabel(v))}</h3><div class="card">${v.extras.map((i) => partHtml(i, `<span class="qty">${i.qty}</span>`)).join('')}</div>`).join('');
+  if (ex.length) h += `<h2>Optional spares (extras)</h2>` + ex.map((v) => `<h3>${count(v)} &times; ${esc(vLabel(v))}</h3><div class="card">${v.extras.map((i) => partHtml(i, `<span class="qty">${i.qty * count(v)}</span>`)).join('')}</div>`).join('');
   return h;
 }
 
@@ -165,7 +177,9 @@ document.addEventListener('click', (e) => {
   const t = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null;
   if (!t) return;
   const d = t.dataset;
-  if (d.tab) state.tab = d.tab as typeof state.tab;
+  if (d.add) { e.preventDefault(); state.workshop[d.add] = (state.workshop[d.add] ?? 0) + 1; saveWorkshop(); }
+  else if (d.rmws) { delete state.workshop[d.rmws]; saveWorkshop(); }
+  else if (d.tab) state.tab = d.tab as typeof state.tab;
   else if (t.id === 'addObs') {
     const v = (document.getElementById('partIn') as HTMLInputElement).value.trim();
     const qty = (document.getElementById('qtyIn') as HTMLInputElement).value;
@@ -187,7 +201,8 @@ document.addEventListener('click', (e) => {
 document.addEventListener('change', (e) => {
   const el = e.target as HTMLInputElement;
   if (el.id === 'setFilter') { state.setFilter = el.value; state.answers = []; state.skipped.clear(); }
-  else if (el.dataset.sel) { const s = el.dataset.sel === 'common' ? state.selCommon : state.selSep; if (el.checked) s.add(el.value); else s.delete(el.value); }
+  else if (el.dataset.sel) { if (el.checked) state.workshop[el.dataset.sel] = state.workshop[el.dataset.sel] || 1; else delete state.workshop[el.dataset.sel]; saveWorkshop(); }
+  else if (el.dataset.cnt) { const n = Math.floor(Number(el.value)); if (n >= 1) state.workshop[el.dataset.cnt] = n; else delete state.workshop[el.dataset.cnt]; saveWorkshop(); }
   else if (el.dataset.chk) { if (el.checked) state.checked.add(el.dataset.chk); else state.checked.delete(el.dataset.chk); localStorage.setItem('lsp-checked', JSON.stringify([...state.checked])); }
   else return;
   render();
