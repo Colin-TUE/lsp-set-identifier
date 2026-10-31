@@ -12,3 +12,10 @@ A simple website to identify which version of a LSP set you have and how to sort
     The scraper warns when two change dates are within half a year (183 days) of each other and not merged.
 - Deploy on Netlify: build `pnpm build`, publish `dist` (see `netlify.toml`).
 - `pnpm install`, `pnpm dev` / `pnpm build` / `pnpm test`
+
+## Releases
+
+Publishing a stable GitHub release runs `.github/workflows/release.yml`, checks out its tag, and advances `production`
+to that exact commit. The commit must be on `main`. Drafts and prereleases do not promote production, and the push is
+fast-forward only: publishing an older or divergent tag fails rather than rolling production back.
+Configure Netlify's production branch as `production`; `main` remains the development branch.
