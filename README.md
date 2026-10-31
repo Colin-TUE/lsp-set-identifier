@@ -18,4 +18,3 @@ A simple website to identify which version of a LSP set you have and how to sort
 Publishing a stable GitHub release runs `.github/workflows/release.yml`, checks out its tag, and advances `production`
 to that exact commit. The commit must be on `main`. Drafts and prereleases do not promote production, and the push is
 fast-forward only: publishing an older or divergent tag fails rather than rolling production back.
-Configure Netlify's production branch as `production`; `main` remains the development branch.
